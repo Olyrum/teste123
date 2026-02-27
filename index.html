@@ -25,6 +25,7 @@
         h2 {
             margin-top: 0;
             color: #0056b3;
+            text-align: center;
         }
         label {
             font-weight: bold;
@@ -58,12 +59,35 @@
             background-color: #ccc;
             cursor: not-allowed;
         }
+        
+        /* Novas classes para esconder o formulário e mostrar a mensagem */
+        .oculto {
+            display: none !important;
+        }
+        .mensagem-sucesso {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .mensagem-sucesso h3 {
+            color: #28a745;
+        }
+        .mensagem-sucesso p {
+            color: #666;
+            font-size: 0.9em;
+        }
     </style>
 </head>
 <body>
 
     <div class="container">
         <h2>Avalie nosso atendimento</h2>
+
+        <div id="tela-sucesso" class="mensagem-sucesso oculto">
+            <h3>Obrigado pela sua avaliação!</h3>
+            <p>Sua nota foi registrada com sucesso.</p>
+            <p>Para fazer uma nova avaliação, feche esta página e abra novamente.</p>
+        </div>
+
         <form id="form-avaliacao">
             <label for="cliente">Nome do Cliente:</label>
             <input type="text" id="cliente" name="Nome" placeholder="Ex: João da Silva" required>
@@ -89,28 +113,37 @@
 
     <script>
         // COLOQUE O LINK QUE VOCÊ COPIOU DO APPS SCRIPT AQUI ENTRE AS ASPAS
-        const scriptURL = 'https://script.google.com/macros/s/AKfycbw_6EWA1X9IhwKHu9DEKfDHbcdNgjI4-C7kjnRAyBlbpipvwXmiKK5dkf0Cr-uWuoLDpg/exec';
+        const scriptURL = 'COLE_AQUI_O_SEU_LINK_DO_APPS_SCRIPT';
+        
         const form = document.getElementById('form-avaliacao');
         const btnSalvar = document.getElementById('btn-salvar');
+        const telaSucesso = document.getElementById('tela-sucesso');
 
+        // PASSO 1: Assim que a página abre, verifica se a pessoa já avaliou nesta sessão
+        if (sessionStorage.getItem('jaAvaliou') === 'sim') {
+            form.classList.add('oculto');
+            telaSucesso.classList.remove('oculto');
+        }
+
+        // PASSO 2: O que acontece quando clica em salvar
         form.addEventListener('submit', e => {
-            e.preventDefault(); // Evita recarregar a página
+            e.preventDefault(); 
             
-            // Muda o botão para mostrar que está carregando
             btnSalvar.innerText = 'Enviando...';
             btnSalvar.disabled = true;
 
-            // Envia os dados para a planilha
             fetch(scriptURL, { method: 'POST', body: new FormData(form)})
                 .then(response => {
-                    alert('Avaliação salva com sucesso!');
-                    form.reset(); // Limpa o formulário
-                    btnSalvar.innerText = 'Salvar Avaliação';
-                    btnSalvar.disabled = false;
+                    // Marca na memória curta do navegador que a pessoa já avaliou
+                    sessionStorage.setItem('jaAvaliou', 'sim');
+                    
+                    // Esconde o formulário e mostra a mensagem de sucesso
+                    form.classList.add('oculto');
+                    telaSucesso.classList.remove('oculto');
                 })
                 .catch(error => {
                     console.error('Erro!', error.message);
-                    alert('Houve um erro ao enviar. Tente novamente.');
+                    alert('Houve um erro de conexão ao enviar. Tente novamente.');
                     btnSalvar.innerText = 'Salvar Avaliação';
                     btnSalvar.disabled = false;
                 });
