@@ -21,7 +21,6 @@
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             width: 100%;
             max-width: 400px;
-            margin-bottom: 20px;
         }
         h2 {
             margin-top: 0;
@@ -50,21 +49,14 @@
             border-radius: 5px;
             font-size: 16px;
             cursor: pointer;
+            transition: background-color 0.3s;
         }
         button:hover {
             background-color: #218838;
         }
-        .historico {
-            width: 100%;
-            max-width: 400px;
-        }
-        .nota-item {
-            background: #fff;
-            padding: 15px;
-            border-left: 5px solid #0056b3;
-            margin-bottom: 10px;
-            border-radius: 5px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
         }
     </style>
 </head>
@@ -74,9 +66,56 @@
         <h2>Avalie nosso atendimento</h2>
         <form id="form-avaliacao">
             <label for="cliente">Nome do Cliente:</label>
-            <input type="text" id="cliente" placeholder="Ex: João da Silva" required>
+            <input type="text" id="cliente" name="Nome" placeholder="Ex: João da Silva" required>
 
             <label for="nota">Nota (1 a 10):</label>
-            <select id="nota" required>
+            <select id="nota" name="Nota" required>
                 <option value="" disabled selected>Selecione uma nota</option>
-                <option value="1">1 - Muito Ruim</option
+                <option value="1">1 - Muito Ruim</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5 - Regular</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10">10 - Excelente</option>
+            </select>
+
+            <button type="submit" id="btn-salvar">Salvar Avaliação</button>
+        </form>
+    </div>
+
+    <script>
+        // COLOQUE O LINK QUE VOCÊ COPIOU DO APPS SCRIPT AQUI ENTRE AS ASPAS
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbw_6EWA1X9IhwKHu9DEKfDHbcdNgjI4-C7kjnRAyBlbpipvwXmiKK5dkf0Cr-uWuoLDpg/exec';
+        const form = document.getElementById('form-avaliacao');
+        const btnSalvar = document.getElementById('btn-salvar');
+
+        form.addEventListener('submit', e => {
+            e.preventDefault(); // Evita recarregar a página
+            
+            // Muda o botão para mostrar que está carregando
+            btnSalvar.innerText = 'Enviando...';
+            btnSalvar.disabled = true;
+
+            // Envia os dados para a planilha
+            fetch(scriptURL, { method: 'POST', body: new FormData(form)})
+                .then(response => {
+                    alert('Avaliação salva com sucesso!');
+                    form.reset(); // Limpa o formulário
+                    btnSalvar.innerText = 'Salvar Avaliação';
+                    btnSalvar.disabled = false;
+                })
+                .catch(error => {
+                    console.error('Erro!', error.message);
+                    alert('Houve um erro ao enviar. Tente novamente.');
+                    btnSalvar.innerText = 'Salvar Avaliação';
+                    btnSalvar.disabled = false;
+                });
+        });
+    </script>
+
+</body>
+</html>
