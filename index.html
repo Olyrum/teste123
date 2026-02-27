@@ -35,14 +35,28 @@
             text-align: center;
             font-size: 1.1em;
         }
-        select {
+        select, textarea {
             width: 100%;
             padding: 12px;
             border: 1px solid #ccc;
             border-radius: 5px;
             box-sizing: border-box;
             font-size: 16px;
+            font-family: Arial, sans-serif;
+        }
+        select {
             text-align: center;
+            margin-bottom: 10px;
+        }
+        textarea {
+            resize: vertical; /* Permite aumentar a caixa de texto apenas para baixo */
+        }
+        .contador {
+            display: block;
+            text-align: right;
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 3px;
         }
         button {
             margin-top: 20px;
@@ -100,6 +114,10 @@
                 <option value="4">4 - Ótimo</option>
             </select>
 
+            <label for="motivo" style="font-size: 0.9em; margin-top: 20px;">Por que você deu essa nota? (Opcional)</label>
+            <textarea id="motivo" name="Motivo" rows="3" maxlength="200" placeholder="Deixe um comentário curto..."></textarea>
+            <span class="contador" id="contador-caracteres">0 / 200</span>
+
             <button type="submit" id="btn-salvar">Enviar Avaliação</button>
         </form>
     </div>
@@ -111,6 +129,13 @@
         const form = document.getElementById('form-avaliacao');
         const btnSalvar = document.getElementById('btn-salvar');
         const telaSucesso = document.getElementById('tela-sucesso');
+        const motivoInput = document.getElementById('motivo');
+        const contador = document.getElementById('contador-caracteres');
+
+        // Atualiza o contador de caracteres conforme a pessoa digita
+        motivoInput.addEventListener('input', function() {
+            contador.textContent = this.value.length + ' / 200';
+        });
 
         // Verifica se a pessoa já avaliou nesta sessão
         if (sessionStorage.getItem('jaAvaliou') === 'sim') {
