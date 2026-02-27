@@ -32,13 +32,17 @@
             display: block;
             margin-top: 15px;
             margin-bottom: 5px;
+            text-align: center;
+            font-size: 1.1em;
         }
-        select, input[type="text"] {
+        select {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             border: 1px solid #ccc;
             border-radius: 5px;
             box-sizing: border-box;
+            font-size: 16px;
+            text-align: center;
         }
         button {
             margin-top: 20px;
@@ -59,8 +63,6 @@
             background-color: #ccc;
             cursor: not-allowed;
         }
-        
-        /* Novas classes para esconder o formulário e mostrar a mensagem */
         .oculto {
             display: none !important;
         }
@@ -89,12 +91,9 @@
         </div>
 
         <form id="form-avaliacao">
-            <label for="cliente">Nome do Cliente:</label>
-            <input type="text" id="cliente" name="Nome" placeholder="Ex: João da Silva" required>
-
-            <label for="nota">Nota (1 a 10):</label>
+            <label for="nota">Que nota você dá para o seu atendimento?</label>
             <select id="nota" name="Nota" required>
-                <option value="" disabled selected>Selecione uma nota</option>
+                <option value="" disabled selected>Selecione uma nota de 1 a 10</option>
                 <option value="1">1 - Muito Ruim</option>
                 <option value="2">2</option>
                 <option value="3">3</option>
@@ -107,25 +106,24 @@
                 <option value="10">10 - Excelente</option>
             </select>
 
-            <button type="submit" id="btn-salvar">Salvar Avaliação</button>
+            <button type="submit" id="btn-salvar">Enviar Avaliação</button>
         </form>
     </div>
 
     <script>
-        // COLOQUE O LINK QUE VOCÊ COPIOU DO APPS SCRIPT AQUI ENTRE AS ASPAS
-        const scriptURL = 'COLE_AQUI_O_SEU_LINK_DO_APPS_SCRIPT';
+        // COLOQUE O SEU LINK DO APPS SCRIPT AQUI ENTRE AS ASPAS
+        const scriptURL = 'https://script.google.com/macros/library/d/1rEmaeNxusROCkO1wsv3PoK8-BNhaD1o4SXXzlB79kgSkJfI6ZzEVUq3A/1';
         
         const form = document.getElementById('form-avaliacao');
         const btnSalvar = document.getElementById('btn-salvar');
         const telaSucesso = document.getElementById('tela-sucesso');
 
-        // PASSO 1: Assim que a página abre, verifica se a pessoa já avaliou nesta sessão
+        // Verifica se a pessoa já avaliou nesta sessão
         if (sessionStorage.getItem('jaAvaliou') === 'sim') {
             form.classList.add('oculto');
             telaSucesso.classList.remove('oculto');
         }
 
-        // PASSO 2: O que acontece quando clica em salvar
         form.addEventListener('submit', e => {
             e.preventDefault(); 
             
@@ -134,17 +132,14 @@
 
             fetch(scriptURL, { method: 'POST', body: new FormData(form)})
                 .then(response => {
-                    // Marca na memória curta do navegador que a pessoa já avaliou
                     sessionStorage.setItem('jaAvaliou', 'sim');
-                    
-                    // Esconde o formulário e mostra a mensagem de sucesso
                     form.classList.add('oculto');
                     telaSucesso.classList.remove('oculto');
                 })
                 .catch(error => {
                     console.error('Erro!', error.message);
                     alert('Houve um erro de conexão ao enviar. Tente novamente.');
-                    btnSalvar.innerText = 'Salvar Avaliação';
+                    btnSalvar.innerText = 'Enviar Avaliação';
                     btnSalvar.disabled = false;
                 });
         });
