@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultados do Atendimento</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 500px;
+        }
+        h2 {
+            margin-top: 0;
+            color: #0056b3;
+            text-align: center;
+        }
+        .painel-media {
+            background-color: #e9f5ff;
+            border: 2px solid #0056b3;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .painel-media h3 {
+            margin: 0 0 10px 0;
+            color: #0056b3;
+        }
+        .nota-media {
+            font-size: 3em;
+            font-weight: bold;
+            color: #28a745;
+        }
+        .total-avaliacoes {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+        .card-avaliacao {
+            background: #fdfdfd;
+            border-left: 5px solid #28a745;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .card-avaliacao .nota-badge {
+            display: inline-block;
+            background-color: #28a745;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .card-avaliacao p {
+            margin: 0;
+            color: #555;
+            line-height: 1.4;
+        }
+        #carregando {
+            text-align: center;
+            font-weight: bold;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Resultados do Atendimento</h2>
+
+        <div class="painel-media" id="painel-media" style="display: none;">
+            <h3>Média Geral</h3>
+            <div class="nota-media" id="valor-media">0.0</div>
+            <div class="total-avaliacoes" id="total-avaliacoes">Baseado em 0 avaliações</div>
+        </div>
+
+        <div id="carregando">Buscando dados na planilha...</div>
+
+        <div id="lista-avaliacoes">
+            </div>
+    </div>
+
+    <script>
+        // COLOQUE O SEU LINK DO APPS SCRIPT AQUI ENTRE AS ASPAS
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbyQaNYGLuuuUlAqTHXwk5eBXZBa0J6N1eZzXGDGbYu9Pu43ZL_Rt8Cf9ilSbdc4UV2UWg/exec';
+        
+        const listaDiv = document.getElementById('lista-avaliacoes');
+        const painelMedia = document.getElementById('painel-media');
+        const valorMedia = document.getElementById('valor-media');
+        const totalAvaliacoes = document.getElementById('total-avaliacoes');
+        const carregando = document.getElementById('carregando');
+
+        // Busca os dados na planilha
+        fetch(scriptURL)
+            .then(response => response.json())
+            .then(data => {
+                carregando.style.display = 'none'; // Esconde o texto de carregando
+                
+                if (data.length === 0) {
+                    listaDiv.innerHTML = '<p style="text-align: center;">Nenhuma avaliação encontrada ainda.</p>';
+                    return;
+                }
+
+                let somaNotas = 0;
+                let quantidadeValida = 0;
+
+                // Mostra o painel de média
+                painelMedia.style.display = 'block';
+
+                // Inverte a lista para mostrar a mais recente primeiro
+                data.reverse().forEach(item => {
+                    let notaNumero = parseFloat(item.nota);
+                    
+                    // Garante que só vai somar se for um número válido
+                    if (!isNaN(notaNumero)) {
+                        somaNotas += notaNumero;
+                        quantidadeValida++;
+                    }
+
+                    // Cria o card da avaliação na tela
+                    const div = document.createElement('div');
+                    div.className = 'card-avaliacao';
+                    div.innerHTML = `
+                        <div class="nota-badge">Nota: ${item.nota}</div>
+                        <p><strong>Motivo:</strong> ${item.motivo}</p>
+                    `;
+                    listaDiv.appendChild(div);
+                });
+
+                // Calcula e mostra a média geral
+                if (quantidadeValida > 0) {
+                    let media = somaNotas / quantidadeValida;
+                    // Mostra a média com apenas 1 casa decimal (ex: 8.5)
+                    valorMedia.textContent = media.toFixed(1);
+                    totalAvaliacoes.textContent = `Baseado em ${quantidadeValida} avaliação(ões)`;
+                }
+
+            })
+            .catch(error => {
+                carregando.innerHTML = '<span style="color: red;">Erro ao carregar os dados. Verifique o link do Apps Script.</span>';
+                console.error('Erro:', error);
+            });
+    </script>
+
+</body>
+</html>
