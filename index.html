@@ -15,6 +15,7 @@
             align-items: center;
             margin: 0;
             padding: 20px;
+            overflow-x: hidden; /* Evita barra de rolagem quando o menu abre */
         }
         .container {
             background: #222;
@@ -26,6 +27,7 @@
             max-width: 900px;
             text-align: center;
             box-sizing: border-box;
+            transition: 0.3s;
         }
         canvas {
             background-color: #ddd;
@@ -69,9 +71,99 @@
         
         h1 { font-size: 24px; text-shadow: 2px 2px #ff9800; margin-bottom: 30px;}
         h2 { font-size: 18px; margin: 20px 0;}
+
+        /* =========================================
+           ESTILOS DO MENU SECRETO DE DESENVOLVEDOR
+           ========================================= */
+        #dev-menu {
+            position: fixed;
+            top: 0;
+            right: -350px; /* Escondido fora da tela */
+            width: 300px;
+            height: 100%;
+            background: rgba(0, 20, 0, 0.95);
+            border-left: 4px solid #0f0;
+            padding: 20px;
+            box-sizing: border-box;
+            transition: right 0.3s ease-in-out;
+            z-index: 9999;
+            color: #0f0; /* Verde estilo Matrix/Hacker */
+            font-family: 'Courier New', Courier, monospace;
+            box-shadow: -5px 0 15px rgba(0,0,0,0.8);
+            overflow-y: auto;
+        }
+        #dev-menu.aberto { right: 0; }
+        #dev-menu h3 {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+            text-align: center;
+            border-bottom: 2px dashed #0f0;
+            padding-bottom: 10px;
+            margin-top: 0;
+            color: #fff;
+        }
+        .dev-linha { margin-bottom: 20px; display: flex; flex-direction: column; }
+        .dev-linha label { font-weight: bold; margin-bottom: 5px; font-size: 14px; }
+        .dev-linha input[type="range"] { width: 100%; cursor: pointer; }
+        .dev-linha input[type="checkbox"] { transform: scale(1.5); margin-right: 10px; cursor: pointer; }
+        .dev-btn {
+            background-color: #000;
+            color: #0f0;
+            border: 2px solid #0f0;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            padding: 10px;
+            width: 100%;
+            margin: 5px 0;
+        }
+        .dev-btn:hover { background-color: #0f0; color: #000; transform: none; }
+        .fechar-dev {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: red;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            padding: 5px 10px;
+            font-family: Arial, sans-serif;
+        }
     </style>
 </head>
 <body>
+
+    <div id="dev-menu">
+        <button class="fechar-dev" id="btn-fechar-dev">X</button>
+        <h3>DEV CONSOLE</h3>
+        
+        <div class="dev-linha" style="flex-direction: row; align-items: center;">
+            <input type="checkbox" id="dev-godmode">
+            <label for="dev-godmode" style="margin: 0;">God Mode (Sem Morte)</label>
+        </div>
+
+        <div class="dev-linha" style="flex-direction: row; align-items: center;">
+            <input type="checkbox" id="dev-spawn" checked>
+            <label for="dev-spawn" style="margin: 0;">Gerar Obstáculos</label>
+        </div>
+
+        <div class="dev-linha" style="flex-direction: row; align-items: center;">
+            <input type="checkbox" id="dev-travar-vel">
+            <label for="dev-travar-vel" style="margin: 0;">Travar Aceleração</label>
+        </div>
+
+        <div class="dev-linha">
+            <label for="dev-velocidade">Velocidade Atual: <span id="val-velocidade">4.5</span></label>
+            <input type="range" id="dev-velocidade" min="2" max="15" step="0.5" value="4.5">
+        </div>
+
+        <button class="dev-btn" id="dev-add-pontos">+ 1000 PONTOS</button>
+        <button class="dev-btn" id="dev-limpar-obstaculos">LIMPAR TELA</button>
+        
+        <p style="font-size: 10px; color: #555; text-align: center; margin-top: 30px;">
+            Aperte SHIFT + D para esconder
+        </p>
+    </div>
 
     <div class="container" id="tela-login">
         <h1>DINO SIMULATOR</h1>
@@ -87,9 +179,7 @@
             <span id="display-nick" style="color: #ff9800;"></span>
             <span id="display-pontos">HI: 00000</span>
         </div>
-        
         <canvas id="gameCanvas" width="800" height="250"></canvas>
-        
         <p style="font-size: 10px; color: #aaa; margin-top: 20px;">ESPAÇO ou TOQUE para pular</p>
     </div>
 
@@ -124,28 +214,83 @@
         let jogoRodando = false;
         let frameProximoObstaculo = 0;
 
+        // Variáveis do DEV MODE
+        let devGodMode = false;
+        let devSpawn = true;
+        let devTravarVel = false;
+
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         
         let dino = { x: 50, y: 190, largura: 34, altura: 40, dy: 0, pulando: false };
-        let obstaculos = []; // Agora guarda tanto cactos quanto pteros
+        let obstaculos = []; 
         let nuvens = [];
         const gravidade = 0.8;
-        const forcaPulo = -13.5; // Pulo um pouquinho mais forte para garantir os 3 cactos
+        const forcaPulo = -13.5; 
         const chaoY = 230;
         
         let velocidadeAtual = 4.5; 
         let animacaoFrame;
 
-        // Motor de Áudio
+        // ==========================================
+        // LÓGICA DO MENU SECRETO (DEV MODE)
+        // ==========================================
+        const devMenu = document.getElementById('dev-menu');
+        const inputGodMode = document.getElementById('dev-godmode');
+        const inputSpawn = document.getElementById('dev-spawn');
+        const inputTravarVel = document.getElementById('dev-travar-vel');
+        const rangeVelocidade = document.getElementById('dev-velocidade');
+        const textoVelocidade = document.getElementById('val-velocidade');
+
+        // Atalho Secreto: Shift + D
+        document.addEventListener('keydown', (e) => {
+            if (e.shiftKey && e.code === 'KeyD') {
+                devMenu.classList.toggle('aberto');
+            }
+            // Impede que a barra de espaço pule enquanto digita o Nick
+            if (e.code === 'Space' && e.target.tagName !== 'INPUT') {
+                e.preventDefault();
+                pular();
+            }
+        });
+
+        document.getElementById('btn-fechar-dev').addEventListener('click', () => {
+            devMenu.classList.remove('aberto');
+        });
+
+        // Controles do Dev Mode
+        inputGodMode.addEventListener('change', (e) => { devGodMode = e.target.checked; });
+        inputSpawn.addEventListener('change', (e) => { devSpawn = e.target.checked; });
+        inputTravarVel.addEventListener('change', (e) => { devTravarVel = e.target.checked; });
+        
+        rangeVelocidade.addEventListener('input', (e) => {
+            velocidadeAtual = parseFloat(e.target.value);
+            textoVelocidade.innerText = velocidadeAtual.toFixed(1);
+        });
+
+        document.getElementById('dev-add-pontos').addEventListener('click', () => {
+            pontuacaoAtual += 1000;
+        });
+
+        document.getElementById('dev-limpar-obstaculos').addEventListener('click', () => {
+            obstaculos = []; // Limpa a tela na hora
+        });
+
+        function atualizarPainelDev() {
+            // Sincroniza o painel com o jogo rodando
+            if (!devTravarVel) {
+                rangeVelocidade.value = velocidadeAtual;
+                textoVelocidade.innerText = velocidadeAtual.toFixed(1);
+            }
+        }
+
+        // ==========================================
+        // ÁUDIO E DESENHOS
+        // ==========================================
         let audioCtx;
         function iniciarAudio() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
+            if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+            if (audioCtx.state === 'suspended') { audioCtx.resume(); }
         }
 
         function tocarSom(tipo) {
@@ -183,16 +328,14 @@
             }
         }
 
-        // ==========================================
-        // GRÁFICOS PIXEL ART
-        // ==========================================
         function desenharDino() {
-            ctx.fillStyle = "#333";
+            // Se estiver em God Mode, deixa o Dino meio transparente e esverdeado
+            ctx.fillStyle = devGodMode ? "rgba(0, 255, 0, 0.6)" : "#333";
             ctx.fillRect(dino.x + 14, dino.y, 16, 16); 
             ctx.fillRect(dino.x + 6, dino.y + 16, 20, 16); 
             ctx.fillRect(dino.x, dino.y + 16, 6, 8); 
             ctx.fillRect(dino.x + 26, dino.y + 18, 8, 4); 
-            ctx.clearRect(dino.x + 18, dino.y + 4, 4, 4); // Olho
+            ctx.clearRect(dino.x + 18, dino.y + 4, 4, 4);
 
             if (!dino.pulando) {
                 if (Math.floor(framesJogo / 8) % 2 === 0) {
@@ -210,25 +353,24 @@
 
         function desenharCacto(x, y) {
             ctx.fillStyle = "#2e7d32";
-            ctx.fillRect(x + 6, y, 6, 40); // Tronco central mais fino
-            ctx.fillRect(x, y + 10, 4, 16); // Braço esquerdo
-            ctx.fillRect(x + 14, y + 5, 4, 16); // Braço direito
-            ctx.fillRect(x + 2, y + 26, 4, 4); // Conexão Esq
-            ctx.fillRect(x + 12, y + 21, 4, 4); // Conexão Dir
+            ctx.fillRect(x + 6, y, 6, 40); 
+            ctx.fillRect(x, y + 10, 4, 16); 
+            ctx.fillRect(x + 14, y + 5, 4, 16); 
+            ctx.fillRect(x + 2, y + 26, 4, 4); 
+            ctx.fillRect(x + 12, y + 21, 4, 4); 
         }
 
         function desenharPtero(x, y) {
             ctx.fillStyle = "#555";
-            ctx.fillRect(x + 10, y + 8, 14, 6); // Corpo
-            ctx.fillRect(x + 24, y + 4, 8, 8); // Cabeça
-            ctx.fillRect(x + 32, y + 6, 8, 4); // Bico
+            ctx.fillRect(x + 10, y + 8, 14, 6); 
+            ctx.fillRect(x + 24, y + 4, 8, 8); 
+            ctx.fillRect(x + 32, y + 6, 8, 4); 
             
-            // Bate as asas a cada 15 frames
             if (Math.floor(framesJogo / 15) % 2 === 0) { 
-                ctx.fillRect(x + 12, y, 10, 8); // Asa cima
+                ctx.fillRect(x + 12, y, 10, 8); 
                 ctx.fillRect(x + 16, y - 6, 8, 6);
             } else { 
-                ctx.fillRect(x + 12, y + 14, 10, 8); // Asa baixo
+                ctx.fillRect(x + 12, y + 14, 10, 8); 
                 ctx.fillRect(x + 16, y + 22, 8, 6);
             }
         }
@@ -249,7 +391,6 @@
             }
         }
         
-        document.addEventListener('keydown', (e) => { if (e.code === 'Space') pular(); });
         canvas.addEventListener('touchstart', (e) => { e.preventDefault(); pular(); });
 
         function atualizarJogo() {
@@ -257,7 +398,6 @@
             framesJogo++;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
             ctx.fillStyle = "#aaa";
             ctx.fillRect(0, chaoY, canvas.width, 4); 
 
@@ -282,35 +422,28 @@
 
             desenharDino();
 
-            // ==========================================
-            // LÓGICA DE GERAÇÃO: CURVA DE DIFICULDADE
-            // ==========================================
-            if (framesJogo >= frameProximoObstaculo) {
+            // SÓ GERA OBSTÁCULOS SE O BOTÃO "GERAR OBSTÁCULOS" NO DEV MENU ESTIVER ATIVADO
+            if (devSpawn && framesJogo >= frameProximoObstaculo) {
                 let tipo = "cacto";
                 
-                // Pterodáctilos só aparecem depois de 400 pontos
                 if (pontuacaoAtual > 400 && Math.random() > 0.6) {
                     tipo = "ptero";
                 }
 
                 if (tipo === "ptero") {
-                    // Sorteia altura: Baixa (tem que pular) ou Alta (passa por baixo)
                     let alturaPtero = Math.random() > 0.5 ? chaoY - 45 : chaoY - 75;
-                    obstaculos.push({ 
-                        tipo: "ptero", x: canvas.width, y: alturaPtero, largura: 36, altura: 20 
-                    });
+                    obstaculos.push({ tipo: "ptero", x: canvas.width, y: alturaPtero, largura: 36, altura: 20 });
                 } else {
-                    // Cactos baseados na pontuação
                     let maxCactos = 1;
-                    if (pontuacaoAtual >= 200) maxCactos = 2; // Depois de 200 pts, pode vir 2
-                    if (pontuacaoAtual >= 400) maxCactos = 3; // Depois de 400 pts, pode vir 3
+                    if (pontuacaoAtual >= 200) maxCactos = 2; 
+                    if (pontuacaoAtual >= 400) maxCactos = 3; 
 
                     let qtdCactos = Math.floor(Math.random() * maxCactos) + 1; 
                     
                     for (let i = 0; i < qtdCactos; i++) {
                         obstaculos.push({ 
                             tipo: "cacto",
-                            x: canvas.width + (i * 20), // Grudados mas puláveis
+                            x: canvas.width + (i * 20), 
                             y: chaoY - 40, 
                             largura: 18, 
                             altura: 40 
@@ -323,19 +456,16 @@
                 frameProximoObstaculo = framesJogo + gapMinimo + gapAleatorio;
             }
 
-            // Move e desenha Obstáculos
             for (let i = 0; i < obstaculos.length; i++) {
                 let obs = obstaculos[i];
-                obs.x -= velocidadeAtual; // Ptero voa na mesma velocidade do jogo
+                obs.x -= velocidadeAtual; 
                 
-                if (obs.tipo === "cacto") {
-                    desenharCacto(obs.x, obs.y);
-                } else {
-                    desenharPtero(obs.x, obs.y);
-                }
+                if (obs.tipo === "cacto") { desenharCacto(obs.x, obs.y); } 
+                else { desenharPtero(obs.x, obs.y); }
 
-                // Caixa de Colisão Ajustada (um pouco menor que o desenho para ser mais justo)
-                if (dino.x + 8 < obs.x + obs.largura && dino.x + dino.largura - 8 > obs.x && 
+                // COLISÃO: Só dá Game Over se o God Mode estiver desligado
+                if (!devGodMode && 
+                    dino.x + 8 < obs.x + obs.largura && dino.x + dino.largura - 8 > obs.x && 
                     dino.y + 8 < obs.y + obs.altura && dino.altura + dino.y > obs.y) {
                     gameOver();
                 }
@@ -343,7 +473,6 @@
 
             obstaculos = obstaculos.filter(obs => obs.x > -50);
 
-            // Pontuação e Velocidade
             if (framesJogo % 5 === 0) {
                 pontuacaoAtual++;
                 let displayPts = pontuacaoAtual.toString().padStart(5, '0');
@@ -351,10 +480,14 @@
 
                 if (pontuacaoAtual > 0 && pontuacaoAtual % 100 === 0) {
                     tocarSom('ponto');
-                    velocidadeAtual += 0.4; // O jogo vai ficando frenético aos poucos
+                    // Só acelera o jogo se o botão de travar não estiver marcado
+                    if (!devTravarVel) {
+                        velocidadeAtual += 0.4; 
+                    }
                 }
             }
 
+            atualizarPainelDev();
             animacaoFrame = requestAnimationFrame(atualizarJogo);
         }
 
@@ -367,7 +500,10 @@
             pontuacaoAtual = 0;
             framesJogo = 0;
             frameProximoObstaculo = 50; 
-            velocidadeAtual = 4.5; // Começa sempre devagar
+            
+            // Se o usuário não travou a velocidade no menu, reseta
+            if (!devTravarVel) { velocidadeAtual = 4.5; }
+            
             document.getElementById('display-pontos').innerText = "HI: 00000";
             jogoRodando = true;
             mostrarTela(telaJogo);
@@ -404,9 +540,7 @@
             dados.append('Pontos', pontuacaoAtual);
 
             fetch(scriptURL, { method: 'POST', body: dados, mode: 'no-cors' })
-                .then(() => {
-                    abrirRanking();
-                })
+                .then(() => { abrirRanking(); })
                 .catch(error => {
                     alert('ERRO AO SALVAR O SCORE.');
                     btn.innerText = 'TENTAR NOVAMENTE';
