@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dino Simulator</title>
+    <title>Dino Simulator - Pixel Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Courier New', Courier, monospace;
-            background-color: #222;
+            font-family: 'Press Start 2P', cursive; /* Fonte retro */
+            background-color: #111;
             color: #fff;
             display: flex;
             flex-direction: column;
@@ -16,95 +17,100 @@
             padding: 20px;
         }
         .container {
-            background: #333;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            background: #222;
+            padding: 30px;
+            border-radius: 5px;
+            border: 4px solid #fff; /* Borda estilo retro */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
             width: 100%;
-            max-width: 600px;
+            max-width: 900px; /* Tela bem maior */
             text-align: center;
+            box-sizing: border-box;
         }
         canvas {
-            background-color: #eee;
-            border-radius: 5px;
+            background-color: #ddd;
             display: block;
             margin: 0 auto;
-            max-width: 100%;
+            width: 100%;
+            height: auto;
+            image-rendering: pixelated; /* Deixa os gráficos nítidos e quadrados */
+            border-radius: 5px;
+            border: 4px solid #444;
         }
         input[type="text"] {
-            padding: 10px;
-            font-size: 16px;
-            border-radius: 5px;
-            border: none;
+            font-family: 'Press Start 2P', cursive;
+            padding: 15px;
+            font-size: 14px;
+            border: 4px solid #fff;
+            background-color: #000;
+            color: #fff;
             width: 80%;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             text-align: center;
+            text-transform: uppercase;
         }
         button {
-            padding: 10px 20px;
+            font-family: 'Press Start 2P', cursive;
+            padding: 15px 20px;
             background-color: #ff9800;
             color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 18px;
+            border: 4px solid #fff;
+            font-size: 14px;
             cursor: pointer;
-            font-weight: bold;
-            margin: 5px;
+            margin: 10px;
+            text-transform: uppercase;
         }
-        button:hover { background-color: #e68a00; }
-        button:disabled { background-color: #777; cursor: not-allowed; }
+        button:hover { background-color: #e68a00; transform: scale(1.05); }
+        button:disabled { background-color: #555; border-color: #333; cursor: not-allowed; }
         .oculto { display: none !important; }
         
-        .ranking-lista {
-            text-align: left;
-            background: #444;
-            padding: 15px;
-            border-radius: 5px;
-            margin-top: 15px;
-        }
-        .ranking-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 5px 0;
-            border-bottom: 1px solid #555;
-        }
+        .ranking-lista { text-align: left; background: #000; padding: 20px; border: 4px solid #fff; margin-top: 20px; font-size: 12px; line-height: 2; }
+        .ranking-item { display: flex; justify-content: space-between; border-bottom: 2px dashed #444; padding: 10px 0; }
+        
+        h1 { font-size: 24px; text-shadow: 2px 2px #ff9800; margin-bottom: 30px;}
+        h2 { font-size: 18px; margin: 20px 0;}
     </style>
 </head>
 <body>
 
     <div class="container" id="tela-login">
-        <h1>🦖 Dino Simulator</h1>
-        <p>Digite seu nick para jogar e entrar no ranking!</p>
-        <input type="text" id="nick" placeholder="Seu Nickname" maxlength="15">
-        <button id="btn-iniciar">Iniciar Jogo</button>
-        <button id="btn-ver-ranking" style="background-color: #2196F3;">Ver Ranking</button>
+        <h1>DINO SIMULATOR</h1>
+        <p style="font-size: 10px; line-height: 1.5; margin-bottom: 30px;">INSIRA SEU NICKNAME PARA INICIAR</p>
+        <input type="text" id="nick" placeholder="PLAYER 1" maxlength="10">
+        <br>
+        <button id="btn-iniciar">INICIAR JOGO</button>
+        <button id="btn-ver-ranking" style="background-color: #2196F3;">RANKING</button>
     </div>
 
     <div class="container oculto" id="tela-jogo">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-            <span id="display-nick" style="font-weight: bold; color: #ff9800;"></span>
-            <span id="display-pontos" style="font-weight: bold;">Score: 0</span>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 14px;">
+            <span id="display-nick" style="color: #ff9800;"></span>
+            <span id="display-pontos">HI: 00000</span>
         </div>
-        <canvas id="gameCanvas" width="500" height="200"></canvas>
-        <p style="font-size: 0.8em; color: #aaa; margin-top: 10px;">Aperte <strong>ESPAÇO</strong> ou toque na tela para pular!</p>
+        
+        <canvas id="gameCanvas" width="800" height="250"></canvas>
+        
+        <p style="font-size: 10px; color: #aaa; margin-top: 20px;">ESPAÇO ou TOQUE para pular</p>
     </div>
 
     <div class="container oculto" id="tela-gameover">
-        <h1 style="color: #f44336;">Fim de Jogo! 💥</h1>
-        <h2>Sua Pontuação: <span id="pontuacao-final">0</span></h2>
-        <button id="btn-salvar-score">Salvar no Ranking</button>
-        <button id="btn-jogar-novamente" style="background-color: #4CAF50;">Jogar Novamente</button>
+        <h1 style="color: #f44336; text-shadow: 2px 2px #fff;">GAME OVER</h1>
+        <h2>SCORE: <span id="pontuacao-final">0</span></h2>
+        <button id="btn-salvar-score">SALVAR SCORE</button>
+        <button id="btn-jogar-novamente" style="background-color: #4CAF50;">TENTAR NOVAMENTE</button>
     </div>
 
     <div class="container oculto" id="tela-ranking">
-        <h1>🏆 Ranking Global</h1>
-        <div id="carregando-ranking">Buscando os melhores jogadores...</div>
+        <h1>TOP 10 PLAYERS</h1>
+        <div id="carregando-ranking" style="font-size: 12px;">CARREGANDO DADOS...</div>
         <div class="ranking-lista" id="lista-ranking"></div>
-        <button id="btn-voltar-ranking" style="margin-top: 20px;">Voltar</button>
+        <button id="btn-voltar-ranking" style="margin-top: 30px;">VOLTAR</button>
     </div>
 
     <script>
-        // COLOQUE O SEU LINK DO APPS SCRIPT AQUI ENTRE AS ASPAS
+        // ==========================================
+        // COLE O SEU LINK DO APPS SCRIPT AQUI ABAIXO
+        // ==========================================
         const scriptURL = 'https://script.google.com/macros/s/AKfycbznnZdsQqZyKWOgCIgjYuaPQ8IeuJsMRX6bfark7LVmtkQ9HkxOnHTotQtD4frA059uew/exec';
         
         // Elementos da Tela
@@ -115,20 +121,114 @@
         
         let nickAtual = "";
         let pontuacaoAtual = 0;
+        let framesJogo = 0;
         let jogoRodando = false;
 
         // Configurações do Jogo (Canvas)
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         
-        let dino = { x: 50, y: 150, width: 30, height: 30, dy: 0, pulando: false };
+        // FÍSICA E VELOCIDADE AJUSTADA
+        let dino = { x: 50, y: 190, largura: 34, altura: 40, dy: 0, pulando: false };
         let cactos = [];
-        let timerCactos = 0;
-        const gravidade = 0.6;
-        let velocidadeJogo = 5;
+        let nuvens = [];
+        const gravidade = 0.8;
+        const forcaPulo = -13;
+        const chaoY = 230;
+        
+        let velocidadeAtual = 4; // Começa devagar
         let animacaoFrame;
 
-        // Controle de Telas
+        // ==========================================
+        // MOTOR DE ÁUDIO 8-BITS (Sem arquivos externos)
+        // ==========================================
+        let audioCtx;
+        function iniciarAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function tocarSom(tipo) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            const agora = audioCtx.currentTime;
+
+            if (tipo === 'pulo') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(300, agora);
+                osc.frequency.exponentialRampToValueAtTime(600, agora + 0.1);
+                gain.gain.setValueAtTime(0.1, agora);
+                gain.gain.exponentialRampToValueAtTime(0.01, agora + 0.1);
+                osc.start(agora);
+                osc.stop(agora + 0.1);
+            } else if (tipo === 'ponto') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(800, agora);
+                osc.frequency.setValueAtTime(1200, agora + 0.05);
+                gain.gain.setValueAtTime(0.1, agora);
+                gain.gain.exponentialRampToValueAtTime(0.01, agora + 0.1);
+                osc.start(agora);
+                osc.stop(agora + 0.1);
+            } else if (tipo === 'morte') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, agora);
+                osc.frequency.exponentialRampToValueAtTime(50, agora + 0.3);
+                gain.gain.setValueAtTime(0.1, agora);
+                gain.gain.exponentialRampToValueAtTime(0.01, agora + 0.3);
+                osc.start(agora);
+                osc.stop(agora + 0.3);
+            }
+        }
+
+        // ==========================================
+        // DESENHOS EM PIXEL ART
+        // ==========================================
+        function desenharDino() {
+            ctx.fillStyle = "#333";
+            // Corpo Principal
+            ctx.fillRect(dino.x + 14, dino.y, 16, 16); // Cabeça
+            ctx.fillRect(dino.x + 6, dino.y + 16, 20, 16); // Torso
+            ctx.fillRect(dino.x, dino.y + 16, 6, 8); // Rabo
+            ctx.fillRect(dino.x + 26, dino.y + 18, 8, 4); // Braço
+            
+            // Olho (Apaga um pixel na cabeça)
+            ctx.clearRect(dino.x + 18, dino.y + 4, 4, 4);
+
+            // Animação das pernas correndo
+            if (!dino.pulando) {
+                if (Math.floor(framesJogo / 8) % 2 === 0) {
+                    ctx.fillRect(dino.x + 10, dino.y + 32, 6, 8); // Perna Esq
+                    ctx.fillRect(dino.x + 20, dino.y + 26, 6, 8); // Perna Dir Recolhida
+                } else {
+                    ctx.fillRect(dino.x + 10, dino.y + 26, 6, 8); // Perna Esq Recolhida
+                    ctx.fillRect(dino.x + 20, dino.y + 32, 6, 8); // Perna Dir
+                }
+            } else {
+                // Pernas paradas no pulo
+                ctx.fillRect(dino.x + 10, dino.y + 32, 6, 8);
+                ctx.fillRect(dino.x + 20, dino.y + 32, 6, 8);
+            }
+        }
+
+        function desenharCacto(x, y) {
+            ctx.fillStyle = "#2e7d32";
+            ctx.fillRect(x + 10, y, 10, 40); // Tronco central
+            ctx.fillRect(x, y + 10, 8, 16); // Braço esquerdo
+            ctx.fillRect(x + 22, y + 5, 8, 16); // Braço direito
+            ctx.fillRect(x + 2, y + 26, 8, 4); // Conexão Esq
+            ctx.fillRect(x + 20, y + 21, 8, 4); // Conexão Dir
+        }
+
+        // ==========================================
+        // LÓGICA DO JOGO
+        // ==========================================
         function mostrarTela(tela) {
             telaLogin.classList.add('oculto');
             telaJogo.classList.add('oculto');
@@ -137,77 +237,96 @@
             tela.classList.remove('oculto');
         }
 
-        // Lógica do Pulo
         function pular() {
             if (!dino.pulando && jogoRodando) {
-                dino.dy = -12;
+                dino.dy = forcaPulo;
                 dino.pulando = true;
+                tocarSom('pulo');
             }
         }
+        
         document.addEventListener('keydown', (e) => { if (e.code === 'Space') pular(); });
         canvas.addEventListener('touchstart', (e) => { e.preventDefault(); pular(); });
 
-        // Loop Principal do Jogo
         function atualizarJogo() {
             if (!jogoRodando) return;
+            framesJogo++;
 
             // Limpa a tela
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+            // Desenha Nuvens e Chão
+            ctx.fillStyle = "#aaa";
+            ctx.fillRect(0, chaoY, canvas.width, 4); // Chão
+
+            if (framesJogo % 120 === 0) {
+                nuvens.push({ x: canvas.width, y: Math.random() * 100 + 20 });
+            }
+            ctx.fillStyle = "#fff";
+            nuvens = nuvens.filter(n => {
+                n.x -= velocidadeAtual * 0.3; // Nuvens movem mais devagar
+                ctx.fillRect(n.x, n.y, 40, 10);
+                ctx.fillRect(n.x + 10, n.y - 10, 20, 10);
+                return n.x > -50;
+            });
+
             // Física do Dino
             dino.dy += gravidade;
             dino.y += dino.dy;
-            if (dino.y >= 150) {
-                dino.y = 150;
+            
+            if (dino.y >= chaoY - dino.altura) {
+                dino.y = chaoY - dino.altura;
                 dino.pulando = false;
             }
 
-            // Desenha Dino (usando Emoji para facilitar)
-            ctx.font = "30px Arial";
-            ctx.fillText("🦖", dino.x, dino.y + 25);
+            desenharDino();
 
-            // Geração de Cactos
-            timerCactos++;
-            if (timerCactos > Math.random() * 60 + 50) {
-                cactos.push({ x: canvas.width, y: 150, width: 20, height: 30 });
-                timerCactos = 0;
+            // Geração de Cactos (Espaçamento aleatório mas seguro)
+            if (framesJogo % Math.floor(Math.random() * 80 + 70) === 0) {
+                cactos.push({ x: canvas.width, y: chaoY - 40, largura: 30, altura: 40 });
             }
 
             // Move e desenha Cactos
             for (let i = 0; i < cactos.length; i++) {
                 let c = cactos[i];
-                c.x -= velocidadeJogo;
-                ctx.fillText("🌵", c.x, c.y + 25);
+                c.x -= velocidadeAtual;
+                desenharCacto(c.x, c.y);
 
-                // Colisão (Aproximada)
-                if (dino.x < c.x + c.width && dino.x + dino.width > c.x && 
-                    dino.y < c.y + c.height && dino.height + dino.y > c.y) {
+                // Colisão (Ajustada para o desenho)
+                if (dino.x + 10 < c.x + c.largura && dino.x + dino.largura - 10 > c.x && 
+                    dino.y + 10 < c.y + c.altura && dino.altura + dino.y > c.y) {
                     gameOver();
                 }
             }
 
-            // Remove cactos que saíram da tela e aumenta pontos
-            cactos = cactos.filter(c => {
-                if (c.x < -30) {
-                    pontuacaoAtual += 10;
-                    document.getElementById('display-pontos').innerText = "Score: " + pontuacaoAtual;
-                    // Aumenta a velocidade aos poucos
-                    if (pontuacaoAtual % 100 === 0) velocidadeJogo += 0.5;
-                    return false;
+            cactos = cactos.filter(c => c.x > -40);
+
+            // Pontuação aumenta baseada no tempo de sobrevivência (como o original)
+            if (framesJogo % 5 === 0) {
+                pontuacaoAtual++;
+                let displayPts = pontuacaoAtual.toString().padStart(5, '0');
+                document.getElementById('display-pontos').innerText = "HI: " + displayPts;
+
+                // Toca som e aumenta velocidade a cada 100 pontos
+                if (pontuacaoAtual > 0 && pontuacaoAtual % 100 === 0) {
+                    tocarSom('ponto');
+                    velocidadeAtual += 0.5; // Acelera o jogo gradualmente
                 }
-                return true;
-            });
+            }
 
             animacaoFrame = requestAnimationFrame(atualizarJogo);
         }
 
         function iniciarJogo() {
-            dino.y = 150;
+            iniciarAudio(); // Libera o áudio no navegador
+            dino.y = chaoY - dino.altura;
             dino.dy = 0;
             cactos = [];
+            nuvens = [];
             pontuacaoAtual = 0;
-            velocidadeJogo = 5;
-            document.getElementById('display-pontos').innerText = "Score: 0";
+            framesJogo = 0;
+            velocidadeAtual = 4.5; // Reseta a velocidade
+            document.getElementById('display-pontos').innerText = "HI: 00000";
             jogoRodando = true;
             mostrarTela(telaJogo);
             atualizarJogo();
@@ -215,47 +334,47 @@
 
         function gameOver() {
             jogoRodando = false;
+            tocarSom('morte');
             cancelAnimationFrame(animacaoFrame);
             document.getElementById('pontuacao-final').innerText = pontuacaoAtual;
             mostrarTela(telaGameOver);
             document.getElementById('btn-salvar-score').disabled = false;
-            document.getElementById('btn-salvar-score').innerText = "Salvar no Ranking";
+            document.getElementById('btn-salvar-score').innerText = "SALVAR SCORE";
         }
 
-        // --- BOTÕES E FLUXO ---
+        // ==========================================
+        // BOTÕES E CONEXÃO COM A PLANILHA
+        // ==========================================
         document.getElementById('btn-iniciar').addEventListener('click', () => {
             let n = document.getElementById('nick').value.trim();
-            if (n === "") { alert("Digite um nick!"); return; }
+            if (n === "") { alert("DIGITE UM NICK!"); return; }
             nickAtual = n;
-            document.getElementById('display-nick').innerText = "Jogador: " + nickAtual;
+            document.getElementById('display-nick').innerText = nickAtual;
             iniciarJogo();
         });
 
         document.getElementById('btn-jogar-novamente').addEventListener('click', iniciarJogo);
 
-        // Salvar Score no Google Sheets
         document.getElementById('btn-salvar-score').addEventListener('click', () => {
             const btn = document.getElementById('btn-salvar-score');
-            btn.innerText = 'Salvando...';
+            btn.innerText = 'SALVANDO...';
             btn.disabled = true;
 
-            const formData = new FormData();
-            formData.append('Nick', nickAtual);
-            formData.append('Pontos', pontuacaoAtual);
+            const dados = new URLSearchParams();
+            dados.append('Nick', nickAtual);
+            dados.append('Pontos', pontuacaoAtual);
 
-            fetch(scriptURL, { method: 'POST', body: formData })
-                .then(response => {
-                    alert("Pontuação salva com sucesso!");
+            fetch(scriptURL, { method: 'POST', body: dados, mode: 'no-cors' })
+                .then(() => {
                     abrirRanking();
                 })
                 .catch(error => {
-                    alert('Erro ao salvar.');
-                    btn.innerText = 'Tentar Novamente';
+                    alert('ERRO AO SALVAR O SCORE.');
+                    btn.innerText = 'TENTAR NOVAMENTE';
                     btn.disabled = false;
                 });
         });
 
-        // Ver Ranking
         document.getElementById('btn-ver-ranking').addEventListener('click', abrirRanking);
         document.getElementById('btn-voltar-ranking').addEventListener('click', () => mostrarTela(telaLogin));
 
@@ -271,20 +390,21 @@
                 .then(data => {
                     status.style.display = "none";
                     if (data.length === 0) {
-                        lista.innerHTML = "<p style='text-align:center;'>Ninguém jogou ainda. Seja o primeiro!</p>";
+                        lista.innerHTML = "<p style='text-align:center;'>NENHUM REGISTRO AINDA.</p>";
                         return;
                     }
                     data.forEach((jogador, index) => {
-                        let medalha = index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : "👾";
+                        let medalha = index === 0 ? "1ST" : index === 1 ? "2ND" : index === 2 ? "3RD" : (index + 1) + "TH";
                         lista.innerHTML += `
                             <div class="ranking-item">
-                                <span>${medalha} <strong>${jogador.nick}</strong></span>
-                                <span style="color:#ff9800; font-weight:bold;">${jogador.pontos} pts</span>
+                                <span style="color:#ff9800;">${medalha}</span>
+                                <span>${jogador.nick}</span>
+                                <span>${jogador.pontos}</span>
                             </div>
                         `;
                     });
                 }).catch(err => {
-                    status.innerText = "Erro ao carregar o ranking.";
+                    status.innerText = "ERRO AO CONECTAR COM O SERVIDOR.";
                 });
         }
     </script>
