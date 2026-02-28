@@ -14,86 +14,67 @@
             align-items: center;
             padding: 40px 20px;
         }
+        /* Estilo das abas de navegação */
+        .abas {
+            display: flex;
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: -10px; /* Junta a aba com a caixa principal */
+            z-index: 1;
+        }
+        .aba {
+            flex: 1;
+            text-align: center;
+            padding: 12px;
+            text-decoration: none;
+            color: #666;
+            background-color: #e2e2e2;
+            border-radius: 10px 10px 0 0;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        .aba.ativa {
+            background-color: white;
+            color: #0056b3;
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
+        }
+        .aba:hover:not(.ativa) {
+            background-color: #d4d4d4;
+        }
+        
+        /* Estilo da caixa principal */
         .container {
             background: white;
             padding: 30px;
-            border-radius: 10px;
+            border-radius: 0 0 10px 10px; /* Arredonda só embaixo */
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             width: 100%;
             max-width: 400px;
-        }
-        h2 {
-            margin-top: 0;
-            color: #0056b3;
-            text-align: center;
-        }
-        label {
-            font-weight: bold;
-            display: block;
-            margin-top: 15px;
-            margin-bottom: 5px;
-            text-align: center;
-            font-size: 1.1em;
-        }
-        select, textarea {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
+            position: relative;
+            z-index: 2;
             box-sizing: border-box;
-            font-size: 16px;
-            font-family: Arial, sans-serif;
         }
-        select {
-            text-align: center;
-            margin-bottom: 10px;
-        }
-        textarea {
-            resize: vertical; /* Permite aumentar a caixa de texto apenas para baixo */
-        }
-        .contador {
-            display: block;
-            text-align: right;
-            font-size: 0.8em;
-            color: #666;
-            margin-top: 3px;
-        }
-        button {
-            margin-top: 20px;
-            width: 100%;
-            padding: 12px;
-            background-color: #28a745;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        button:hover {
-            background-color: #218838;
-        }
-        button:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
-        .oculto {
-            display: none !important;
-        }
-        .mensagem-sucesso {
-            text-align: center;
-            margin-top: 20px;
-        }
-        .mensagem-sucesso h3 {
-            color: #28a745;
-        }
-        .mensagem-sucesso p {
-            color: #666;
-            font-size: 0.9em;
-        }
+        h2 { margin-top: 0; color: #0056b3; text-align: center; }
+        label { font-weight: bold; display: block; margin-top: 15px; margin-bottom: 5px; text-align: center; font-size: 1.1em; }
+        select, textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; font-family: Arial, sans-serif; }
+        select { text-align: center; margin-bottom: 10px; }
+        textarea { resize: vertical; }
+        .contador { display: block; text-align: right; font-size: 0.8em; color: #666; margin-top: 3px; }
+        button { margin-top: 20px; width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; transition: background-color 0.3s; }
+        button:hover { background-color: #218838; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        .oculto { display: none !important; }
+        .mensagem-sucesso { text-align: center; margin-top: 20px; }
+        .mensagem-sucesso h3 { color: #28a745; }
+        .mensagem-sucesso p { color: #666; font-size: 0.9em; }
     </style>
 </head>
 <body>
+
+    <div class="abas">
+        <a href="index.html" class="aba ativa">Avaliar</a>
+        <a href="resultados.html" class="aba">Resultados</a>
+    </div>
 
     <div class="container">
         <h2>Avalie nosso atendimento</h2>
@@ -129,7 +110,7 @@
     </div>
 
     <script>
-        // COLOQUE O SEU LINK DO APPS SCRIPT AQUI ENTRE AS ASPAS
+        // COLOQUE O SEU LINK DO APPS SCRIPT AQUI
         const scriptURL = 'https://script.google.com/macros/s/AKfycbyQaNYGLuuuUlAqTHXwk5eBXZBa0J6N1eZzXGDGbYu9Pu43ZL_Rt8Cf9ilSbdc4UV2UWg/exec';
         
         const form = document.getElementById('form-avaliacao');
@@ -138,12 +119,10 @@
         const motivoInput = document.getElementById('motivo');
         const contador = document.getElementById('contador-caracteres');
 
-        // Atualiza o contador de caracteres conforme a pessoa digita
         motivoInput.addEventListener('input', function() {
             contador.textContent = this.value.length + ' / 200';
         });
 
-        // Verifica se a pessoa já avaliou nesta sessão
         if (sessionStorage.getItem('jaAvaliou') === 'sim') {
             form.classList.add('oculto');
             telaSucesso.classList.remove('oculto');
@@ -151,7 +130,6 @@
 
         form.addEventListener('submit', e => {
             e.preventDefault(); 
-            
             btnSalvar.innerText = 'Enviando...';
             btnSalvar.disabled = true;
 
