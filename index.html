@@ -128,10 +128,10 @@
         const ctx = canvas.getContext('2d');
         
         let dino = { x: 50, y: 190, largura: 34, altura: 40, dy: 0, pulando: false };
-        let cactos = [];
+        let obstaculos = []; // Agora guarda tanto cactos quanto pteros
         let nuvens = [];
         const gravidade = 0.8;
-        const forcaPulo = -13;
+        const forcaPulo = -13.5; // Pulo um pouquinho mais forte para garantir os 3 cactos
         const chaoY = 230;
         
         let velocidadeAtual = 4.5; 
@@ -183,13 +183,16 @@
             }
         }
 
+        // ==========================================
+        // GRÁFICOS PIXEL ART
+        // ==========================================
         function desenharDino() {
             ctx.fillStyle = "#333";
             ctx.fillRect(dino.x + 14, dino.y, 16, 16); 
             ctx.fillRect(dino.x + 6, dino.y + 16, 20, 16); 
             ctx.fillRect(dino.x, dino.y + 16, 6, 8); 
             ctx.fillRect(dino.x + 26, dino.y + 18, 8, 4); 
-            ctx.clearRect(dino.x + 18, dino.y + 4, 4, 4);
+            ctx.clearRect(dino.x + 18, dino.y + 4, 4, 4); // Olho
 
             if (!dino.pulando) {
                 if (Math.floor(framesJogo / 8) % 2 === 0) {
@@ -207,11 +210,27 @@
 
         function desenharCacto(x, y) {
             ctx.fillStyle = "#2e7d32";
-            ctx.fillRect(x + 10, y, 10, 40); 
-            ctx.fillRect(x, y + 10, 8, 16); 
-            ctx.fillRect(x + 22, y + 5, 8, 16); 
-            ctx.fillRect(x + 2, y + 26, 8, 4); 
-            ctx.fillRect(x + 20, y + 21, 8, 4); 
+            ctx.fillRect(x + 6, y, 6, 40); // Tronco central mais fino
+            ctx.fillRect(x, y + 10, 4, 16); // Braço esquerdo
+            ctx.fillRect(x + 14, y + 5, 4, 16); // Braço direito
+            ctx.fillRect(x + 2, y + 26, 4, 4); // Conexão Esq
+            ctx.fillRect(x + 12, y + 21, 4, 4); // Conexão Dir
+        }
+
+        function desenharPtero(x, y) {
+            ctx.fillStyle = "#555";
+            ctx.fillRect(x + 10, y + 8, 14, 6); // Corpo
+            ctx.fillRect(x + 24, y + 4, 8, 8); // Cabeça
+            ctx.fillRect(x + 32, y + 6, 8, 4); // Bico
+            
+            // Bate as asas a cada 15 frames
+            if (Math.floor(framesJogo / 15) % 2 === 0) { 
+                ctx.fillRect(x + 12, y, 10, 8); // Asa cima
+                ctx.fillRect(x + 16, y - 6, 8, 6);
+            } else { 
+                ctx.fillRect(x + 12, y + 14, 10, 8); // Asa baixo
+                ctx.fillRect(x + 16, y + 22, 8, 6);
+            }
         }
 
         function mostrarTela(tela) {
@@ -243,7 +262,7 @@
             ctx.fillRect(0, chaoY, canvas.width, 4); 
 
             if (framesJogo % 120 === 0) {
-                nuvens.push({ x: canvas.width, y: Math.random() * 100 + 20 });
+                nuvens.push({ x: canvas.width, y: Math.random() * 80 + 20 });
             }
             ctx.fillStyle = "#fff";
             nuvens = nuvens.filter(n => {
@@ -263,36 +282,68 @@
 
             desenharDino();
 
+            // ==========================================
+            // LÓGICA DE GERAÇÃO: CURVA DE DIFICULDADE
+            // ==========================================
             if (framesJogo >= frameProximoObstaculo) {
-                let qtdCactos = Math.random() > 0.75 ? 2 : 1; 
+                let tipo = "cacto";
                 
-                for (let i = 0; i < qtdCactos; i++) {
-                    cactos.push({ 
-                        x: canvas.width + (i * 25), 
-                        y: chaoY - 40, 
-                        largura: 30, 
-                        altura: 40 
-                    });
+                // Pterodáctilos só aparecem depois de 400 pontos
+                if (pontuacaoAtual > 400 && Math.random() > 0.6) {
+                    tipo = "ptero";
                 }
 
-                let gapMinimo = 60 + (velocidadeAtual * 2); 
-                let gapAleatorio = Math.random() * 70;
+                if (tipo === "ptero") {
+                    // Sorteia altura: Baixa (tem que pular) ou Alta (passa por baixo)
+                    let alturaPtero = Math.random() > 0.5 ? chaoY - 45 : chaoY - 75;
+                    obstaculos.push({ 
+                        tipo: "ptero", x: canvas.width, y: alturaPtero, largura: 36, altura: 20 
+                    });
+                } else {
+                    // Cactos baseados na pontuação
+                    let maxCactos = 1;
+                    if (pontuacaoAtual >= 200) maxCactos = 2; // Depois de 200 pts, pode vir 2
+                    if (pontuacaoAtual >= 400) maxCactos = 3; // Depois de 400 pts, pode vir 3
+
+                    let qtdCactos = Math.floor(Math.random() * maxCactos) + 1; 
+                    
+                    for (let i = 0; i < qtdCactos; i++) {
+                        obstaculos.push({ 
+                            tipo: "cacto",
+                            x: canvas.width + (i * 20), // Grudados mas puláveis
+                            y: chaoY - 40, 
+                            largura: 18, 
+                            altura: 40 
+                        });
+                    }
+                }
+
+                let gapMinimo = 60 + (velocidadeAtual * 2.5); 
+                let gapAleatorio = Math.random() * 80;
                 frameProximoObstaculo = framesJogo + gapMinimo + gapAleatorio;
             }
 
-            for (let i = 0; i < cactos.length; i++) {
-                let c = cactos[i];
-                c.x -= velocidadeAtual;
-                desenharCacto(c.x, c.y);
+            // Move e desenha Obstáculos
+            for (let i = 0; i < obstaculos.length; i++) {
+                let obs = obstaculos[i];
+                obs.x -= velocidadeAtual; // Ptero voa na mesma velocidade do jogo
+                
+                if (obs.tipo === "cacto") {
+                    desenharCacto(obs.x, obs.y);
+                } else {
+                    desenharPtero(obs.x, obs.y);
+                }
 
-                if (dino.x + 10 < c.x + c.largura && dino.x + dino.largura - 10 > c.x && 
-                    dino.y + 10 < c.y + c.altura && dino.altura + dino.y > c.y) {
+                // Caixa de Colisão Ajustada (um pouco menor que o desenho para ser mais justo)
+                if (dino.x + 8 < obs.x + obs.largura && dino.x + dino.largura - 8 > obs.x && 
+                    dino.y + 8 < obs.y + obs.altura && dino.altura + dino.y > obs.y) {
                     gameOver();
                 }
             }
 
-            cactos = cactos.filter(c => c.x > -40);
+            obstaculos = obstaculos.filter(obs => obs.x > -50);
 
+            // Pontuação e Velocidade
             if (framesJogo % 5 === 0) {
                 pontuacaoAtual++;
                 let displayPts = pontuacaoAtual.toString().padStart(5, '0');
@@ -300,7 +351,7 @@
 
                 if (pontuacaoAtual > 0 && pontuacaoAtual % 100 === 0) {
                     tocarSom('ponto');
-                    velocidadeAtual += 0.4; 
+                    velocidadeAtual += 0.4; // O jogo vai ficando frenético aos poucos
                 }
             }
 
@@ -311,12 +362,12 @@
             iniciarAudio(); 
             dino.y = chaoY - dino.altura;
             dino.dy = 0;
-            cactos = [];
+            obstaculos = [];
             nuvens = [];
             pontuacaoAtual = 0;
             framesJogo = 0;
             frameProximoObstaculo = 50; 
-            velocidadeAtual = 4.5; 
+            velocidadeAtual = 4.5; // Começa sempre devagar
             document.getElementById('display-pontos').innerText = "HI: 00000";
             jogoRodando = true;
             mostrarTela(telaJogo);
