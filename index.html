@@ -123,12 +123,12 @@
         let pontuacaoAtual = 0;
         let framesJogo = 0;
         let jogoRodando = false;
+        let frameProximoObstaculo = 0; // NOVA VARIÁVEL: Controla o agendamento seguro
 
         // Configurações do Jogo (Canvas)
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         
-        // FÍSICA E VELOCIDADE AJUSTADA
         let dino = { x: 50, y: 190, largura: 34, altura: 40, dy: 0, pulando: false };
         let cactos = [];
         let nuvens = [];
@@ -136,12 +136,10 @@
         const forcaPulo = -13;
         const chaoY = 230;
         
-        let velocidadeAtual = 4; // Começa devagar
+        let velocidadeAtual = 4; 
         let animacaoFrame;
 
-        // ==========================================
-        // MOTOR DE ÁUDIO 8-BITS (Sem arquivos externos)
-        // ==========================================
+        // Motor de Áudio
         let audioCtx;
         function iniciarAudio() {
             if (!audioCtx) {
@@ -187,31 +185,23 @@
             }
         }
 
-        // ==========================================
-        // DESENHOS EM PIXEL ART
-        // ==========================================
         function desenharDino() {
             ctx.fillStyle = "#333";
-            // Corpo Principal
-            ctx.fillRect(dino.x + 14, dino.y, 16, 16); // Cabeça
-            ctx.fillRect(dino.x + 6, dino.y + 16, 20, 16); // Torso
-            ctx.fillRect(dino.x, dino.y + 16, 6, 8); // Rabo
-            ctx.fillRect(dino.x + 26, dino.y + 18, 8, 4); // Braço
-            
-            // Olho (Apaga um pixel na cabeça)
+            ctx.fillRect(dino.x + 14, dino.y, 16, 16); 
+            ctx.fillRect(dino.x + 6, dino.y + 16, 20, 16); 
+            ctx.fillRect(dino.x, dino.y + 16, 6, 8); 
+            ctx.fillRect(dino.x + 26, dino.y + 18, 8, 4); 
             ctx.clearRect(dino.x + 18, dino.y + 4, 4, 4);
 
-            // Animação das pernas correndo
             if (!dino.pulando) {
                 if (Math.floor(framesJogo / 8) % 2 === 0) {
-                    ctx.fillRect(dino.x + 10, dino.y + 32, 6, 8); // Perna Esq
-                    ctx.fillRect(dino.x + 20, dino.y + 26, 6, 8); // Perna Dir Recolhida
+                    ctx.fillRect(dino.x + 10, dino.y + 32, 6, 8); 
+                    ctx.fillRect(dino.x + 20, dino.y + 26, 6, 8); 
                 } else {
-                    ctx.fillRect(dino.x + 10, dino.y + 26, 6, 8); // Perna Esq Recolhida
-                    ctx.fillRect(dino.x + 20, dino.y + 32, 6, 8); // Perna Dir
+                    ctx.fillRect(dino.x + 10, dino.y + 26, 6, 8); 
+                    ctx.fillRect(dino.x + 20, dino.y + 32, 6, 8); 
                 }
             } else {
-                // Pernas paradas no pulo
                 ctx.fillRect(dino.x + 10, dino.y + 32, 6, 8);
                 ctx.fillRect(dino.x + 20, dino.y + 32, 6, 8);
             }
@@ -219,16 +209,13 @@
 
         function desenharCacto(x, y) {
             ctx.fillStyle = "#2e7d32";
-            ctx.fillRect(x + 10, y, 10, 40); // Tronco central
-            ctx.fillRect(x, y + 10, 8, 16); // Braço esquerdo
-            ctx.fillRect(x + 22, y + 5, 8, 16); // Braço direito
-            ctx.fillRect(x + 2, y + 26, 8, 4); // Conexão Esq
-            ctx.fillRect(x + 20, y + 21, 8, 4); // Conexão Dir
+            ctx.fillRect(x + 10, y, 10, 40); 
+            ctx.fillRect(x, y + 10, 8, 16); 
+            ctx.fillRect(x + 22, y + 5, 8, 16); 
+            ctx.fillRect(x + 2, y + 26, 8, 4); 
+            ctx.fillRect(x + 20, y + 21, 8, 4); 
         }
 
-        // ==========================================
-        // LÓGICA DO JOGO
-        // ==========================================
         function mostrarTela(tela) {
             telaLogin.classList.add('oculto');
             telaJogo.classList.add('oculto');
@@ -252,19 +239,18 @@
             if (!jogoRodando) return;
             framesJogo++;
 
-            // Limpa a tela
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Desenha Nuvens e Chão
+            // Chão e Nuvens
             ctx.fillStyle = "#aaa";
-            ctx.fillRect(0, chaoY, canvas.width, 4); // Chão
+            ctx.fillRect(0, chaoY, canvas.width, 4); 
 
             if (framesJogo % 120 === 0) {
                 nuvens.push({ x: canvas.width, y: Math.random() * 100 + 20 });
             }
             ctx.fillStyle = "#fff";
             nuvens = nuvens.filter(n => {
-                n.x -= velocidadeAtual * 0.3; // Nuvens movem mais devagar
+                n.x -= velocidadeAtual * 0.3; 
                 ctx.fillRect(n.x, n.y, 40, 10);
                 ctx.fillRect(n.x + 10, n.y - 10, 20, 10);
                 return n.x > -50;
@@ -281,9 +267,27 @@
 
             desenharDino();
 
-            // Geração de Cactos (Espaçamento aleatório mas seguro)
-            if (framesJogo % Math.floor(Math.random() * 80 + 70) === 0) {
-                cactos.push({ x: canvas.width, y: chaoY - 40, largura: 30, altura: 40 });
+            // ==================================================
+            // NOVA LÓGICA DE GERAÇÃO SEGURA DE CACTOS
+            // ==================================================
+            if (framesJogo >= frameProximoObstaculo) {
+                // Sorteia se vai vir 1 cacto sozinho ou 2 cactos juntos (mais largo)
+                let qtdCactos = Math.random() > 0.75 ? 2 : 1; 
+                
+                for (let i = 0; i < qtdCactos; i++) {
+                    cactos.push({ 
+                        x: canvas.width + (i * 25), // Se for mais de 1, gruda eles
+                        y: chaoY - 40, 
+                        largura: 30, 
+                        altura: 40 
+                    });
+                }
+
+                // Agenda o próximo grupo de cactos com um intervalo seguro
+                // Mínimo de 60 frames (tempo suficiente para pular e pousar) + um tempo aleatório
+                let gapMinimo = 60 + (velocidadeAtual * 2); 
+                let gapAleatorio = Math.random() * 70;
+                frameProximoObstaculo = framesJogo + gapMinimo + gapAleatorio;
             }
 
             // Move e desenha Cactos
@@ -292,7 +296,6 @@
                 c.x -= velocidadeAtual;
                 desenharCacto(c.x, c.y);
 
-                // Colisão (Ajustada para o desenho)
                 if (dino.x + 10 < c.x + c.largura && dino.x + dino.largura - 10 > c.x && 
                     dino.y + 10 < c.y + c.altura && dino.altura + dino.y > c.y) {
                     gameOver();
@@ -301,16 +304,15 @@
 
             cactos = cactos.filter(c => c.x > -40);
 
-            // Pontuação aumenta baseada no tempo de sobrevivência (como o original)
+            // Pontuação e Velocidade
             if (framesJogo % 5 === 0) {
                 pontuacaoAtual++;
                 let displayPts = pontuacaoAtual.toString().padStart(5, '0');
                 document.getElementById('display-pontos').innerText = "HI: " + displayPts;
 
-                // Toca som e aumenta velocidade a cada 100 pontos
                 if (pontuacaoAtual > 0 && pontuacaoAtual % 100 === 0) {
                     tocarSom('ponto');
-                    velocidadeAtual += 0.5; // Acelera o jogo gradualmente
+                    velocidadeAtual += 0.4; // Acelera um pouquinho a cada 100 pts
                 }
             }
 
@@ -318,14 +320,15 @@
         }
 
         function iniciarJogo() {
-            iniciarAudio(); // Libera o áudio no navegador
+            iniciarAudio(); 
             dino.y = chaoY - dino.altura;
             dino.dy = 0;
             cactos = [];
             nuvens = [];
             pontuacaoAtual = 0;
             framesJogo = 0;
-            velocidadeAtual = 4.5; // Reseta a velocidade
+            frameProximoObstaculo = 50; // O primeiro cacto aparece rápido
+            velocidadeAtual = 4.5; 
             document.getElementById('display-pontos').innerText = "HI: 00000";
             jogoRodando = true;
             mostrarTela(telaJogo);
@@ -342,9 +345,7 @@
             document.getElementById('btn-salvar-score').innerText = "SALVAR SCORE";
         }
 
-        // ==========================================
-        // BOTÕES E CONEXÃO COM A PLANILHA
-        // ==========================================
+        // Eventos dos Botões
         document.getElementById('btn-iniciar').addEventListener('click', () => {
             let n = document.getElementById('nick').value.trim();
             if (n === "") { alert("DIGITE UM NICK!"); return; }
