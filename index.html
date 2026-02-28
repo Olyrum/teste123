@@ -3,150 +3,290 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Avaliação de Atendimento</title>
+    <title>Dino Simulator</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
-            color: #333;
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #222;
+            color: #fff;
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 40px 20px;
+            margin: 0;
+            padding: 20px;
         }
-        /* Estilo das abas de navegação */
-        .abas {
-            display: flex;
-            width: 100%;
-            max-width: 400px;
-            margin-bottom: -10px; /* Junta a aba com a caixa principal */
-            z-index: 1;
-        }
-        .aba {
-            flex: 1;
-            text-align: center;
-            padding: 12px;
-            text-decoration: none;
-            color: #666;
-            background-color: #e2e2e2;
-            border-radius: 10px 10px 0 0;
-            font-weight: bold;
-            transition: 0.3s;
-        }
-        .aba.ativa {
-            background-color: white;
-            color: #0056b3;
-            box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
-        }
-        .aba:hover:not(.ativa) {
-            background-color: #d4d4d4;
-        }
-        
-        /* Estilo da caixa principal */
         .container {
-            background: white;
-            padding: 30px;
-            border-radius: 0 0 10px 10px; /* Arredonda só embaixo */
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            background: #333;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
             width: 100%;
-            max-width: 400px;
-            position: relative;
-            z-index: 2;
-            box-sizing: border-box;
+            max-width: 600px;
+            text-align: center;
         }
-        h2 { margin-top: 0; color: #0056b3; text-align: center; }
-        label { font-weight: bold; display: block; margin-top: 15px; margin-bottom: 5px; text-align: center; font-size: 1.1em; }
-        select, textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; font-family: Arial, sans-serif; }
-        select { text-align: center; margin-bottom: 10px; }
-        textarea { resize: vertical; }
-        .contador { display: block; text-align: right; font-size: 0.8em; color: #666; margin-top: 3px; }
-        button { margin-top: 20px; width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; transition: background-color 0.3s; }
-        button:hover { background-color: #218838; }
-        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        canvas {
+            background-color: #eee;
+            border-radius: 5px;
+            display: block;
+            margin: 0 auto;
+            max-width: 100%;
+        }
+        input[type="text"] {
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: none;
+            width: 80%;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #ff9800;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+        }
+        button:hover { background-color: #e68a00; }
+        button:disabled { background-color: #777; cursor: not-allowed; }
         .oculto { display: none !important; }
-        .mensagem-sucesso { text-align: center; margin-top: 20px; }
-        .mensagem-sucesso h3 { color: #28a745; }
-        .mensagem-sucesso p { color: #666; font-size: 0.9em; }
+        
+        .ranking-lista {
+            text-align: left;
+            background: #444;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+        .ranking-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #555;
+        }
     </style>
 </head>
 <body>
 
-    <div class="abas">
-        <a href="index.html" class="aba ativa">Avaliar</a>
-        <a href="resultados.html" class="aba">Resultados</a>
+    <div class="container" id="tela-login">
+        <h1>🦖 Dino Simulator</h1>
+        <p>Digite seu nick para jogar e entrar no ranking!</p>
+        <input type="text" id="nick" placeholder="Seu Nickname" maxlength="15">
+        <button id="btn-iniciar">Iniciar Jogo</button>
+        <button id="btn-ver-ranking" style="background-color: #2196F3;">Ver Ranking</button>
     </div>
 
-    <div class="container">
-        <h2>Avalie nosso atendimento</h2>
-
-        <div id="tela-sucesso" class="mensagem-sucesso oculto">
-            <h3>Obrigado pela sua avaliação!</h3>
-            <p>Sua nota foi registrada com sucesso.</p>
-            <p>Para fazer uma nova avaliação, feche esta página e abra novamente.</p>
+    <div class="container oculto" id="tela-jogo">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+            <span id="display-nick" style="font-weight: bold; color: #ff9800;"></span>
+            <span id="display-pontos" style="font-weight: bold;">Score: 0</span>
         </div>
+        <canvas id="gameCanvas" width="500" height="200"></canvas>
+        <p style="font-size: 0.8em; color: #aaa; margin-top: 10px;">Aperte <strong>ESPAÇO</strong> ou toque na tela para pular!</p>
+    </div>
 
-        <form id="form-avaliacao">
-            <label for="nota">Que nota você dá para o seu atendimento?</label>
-            <select id="nota" name="Nota" required>
-                <option value="" disabled selected>Selecione uma nota de 1 a 10</option>
-                <option value="1">1 - Muito Ruim</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="5">5 - Regular</option>
-                <option value="6">6</option>
-                <option value="7">7</option>
-                <option value="8">8</option>
-                <option value="9">9</option>
-                <option value="10">10 - Excelente</option>
-            </select>
+    <div class="container oculto" id="tela-gameover">
+        <h1 style="color: #f44336;">Fim de Jogo! 💥</h1>
+        <h2>Sua Pontuação: <span id="pontuacao-final">0</span></h2>
+        <button id="btn-salvar-score">Salvar no Ranking</button>
+        <button id="btn-jogar-novamente" style="background-color: #4CAF50;">Jogar Novamente</button>
+    </div>
 
-            <label for="motivo" style="font-size: 0.9em; margin-top: 20px;">Por que você deu essa nota? (Opcional)</label>
-            <textarea id="motivo" name="Motivo" rows="3" maxlength="200" placeholder="Deixe um comentário curto..."></textarea>
-            <span class="contador" id="contador-caracteres">0 / 200</span>
-
-            <button type="submit" id="btn-salvar">Enviar Avaliação</button>
-        </form>
+    <div class="container oculto" id="tela-ranking">
+        <h1>🏆 Ranking Global</h1>
+        <div id="carregando-ranking">Buscando os melhores jogadores...</div>
+        <div class="ranking-lista" id="lista-ranking"></div>
+        <button id="btn-voltar-ranking" style="margin-top: 20px;">Voltar</button>
     </div>
 
     <script>
-        // COLOQUE O SEU LINK DO APPS SCRIPT AQUI
-        const scriptURL = 'https://script.google.com/macros/s/AKfycbyQaNYGLuuuUlAqTHXwk5eBXZBa0J6N1eZzXGDGbYu9Pu43ZL_Rt8Cf9ilSbdc4UV2UWg/exec';
+        // COLOQUE O SEU LINK DO APPS SCRIPT AQUI ENTRE AS ASPAS
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbxzNluYXCbfC0YiBdXk2u1vC8f1EnX7Di-fNMS7TYyY-DhO4-Q1If_ZyYOvxuVuvg6dtQ/exec';
         
-        const form = document.getElementById('form-avaliacao');
-        const btnSalvar = document.getElementById('btn-salvar');
-        const telaSucesso = document.getElementById('tela-sucesso');
-        const motivoInput = document.getElementById('motivo');
-        const contador = document.getElementById('contador-caracteres');
+        // Elementos da Tela
+        const telaLogin = document.getElementById('tela-login');
+        const telaJogo = document.getElementById('tela-jogo');
+        const telaGameOver = document.getElementById('tela-gameover');
+        const telaRanking = document.getElementById('tela-ranking');
+        
+        let nickAtual = "";
+        let pontuacaoAtual = 0;
+        let jogoRodando = false;
 
-        motivoInput.addEventListener('input', function() {
-            contador.textContent = this.value.length + ' / 200';
-        });
+        // Configurações do Jogo (Canvas)
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let dino = { x: 50, y: 150, width: 30, height: 30, dy: 0, pulando: false };
+        let cactos = [];
+        let timerCactos = 0;
+        const gravidade = 0.6;
+        let velocidadeJogo = 5;
+        let animacaoFrame;
 
-        if (sessionStorage.getItem('jaAvaliou') === 'sim') {
-            form.classList.add('oculto');
-            telaSucesso.classList.remove('oculto');
+        // Controle de Telas
+        function mostrarTela(tela) {
+            telaLogin.classList.add('oculto');
+            telaJogo.classList.add('oculto');
+            telaGameOver.classList.add('oculto');
+            telaRanking.classList.add('oculto');
+            tela.classList.remove('oculto');
         }
 
-        form.addEventListener('submit', e => {
-            e.preventDefault(); 
-            btnSalvar.innerText = 'Enviando...';
-            btnSalvar.disabled = true;
+        // Lógica do Pulo
+        function pular() {
+            if (!dino.pulando && jogoRodando) {
+                dino.dy = -12;
+                dino.pulando = true;
+            }
+        }
+        document.addEventListener('keydown', (e) => { if (e.code === 'Space') pular(); });
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); pular(); });
 
-            fetch(scriptURL, { method: 'POST', body: new FormData(form)})
+        // Loop Principal do Jogo
+        function atualizarJogo() {
+            if (!jogoRodando) return;
+
+            // Limpa a tela
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Física do Dino
+            dino.dy += gravidade;
+            dino.y += dino.dy;
+            if (dino.y >= 150) {
+                dino.y = 150;
+                dino.pulando = false;
+            }
+
+            // Desenha Dino (usando Emoji para facilitar)
+            ctx.font = "30px Arial";
+            ctx.fillText("🦖", dino.x, dino.y + 25);
+
+            // Geração de Cactos
+            timerCactos++;
+            if (timerCactos > Math.random() * 60 + 50) {
+                cactos.push({ x: canvas.width, y: 150, width: 20, height: 30 });
+                timerCactos = 0;
+            }
+
+            // Move e desenha Cactos
+            for (let i = 0; i < cactos.length; i++) {
+                let c = cactos[i];
+                c.x -= velocidadeJogo;
+                ctx.fillText("🌵", c.x, c.y + 25);
+
+                // Colisão (Aproximada)
+                if (dino.x < c.x + c.width && dino.x + dino.width > c.x && 
+                    dino.y < c.y + c.height && dino.height + dino.y > c.y) {
+                    gameOver();
+                }
+            }
+
+            // Remove cactos que saíram da tela e aumenta pontos
+            cactos = cactos.filter(c => {
+                if (c.x < -30) {
+                    pontuacaoAtual += 10;
+                    document.getElementById('display-pontos').innerText = "Score: " + pontuacaoAtual;
+                    // Aumenta a velocidade aos poucos
+                    if (pontuacaoAtual % 100 === 0) velocidadeJogo += 0.5;
+                    return false;
+                }
+                return true;
+            });
+
+            animacaoFrame = requestAnimationFrame(atualizarJogo);
+        }
+
+        function iniciarJogo() {
+            dino.y = 150;
+            dino.dy = 0;
+            cactos = [];
+            pontuacaoAtual = 0;
+            velocidadeJogo = 5;
+            document.getElementById('display-pontos').innerText = "Score: 0";
+            jogoRodando = true;
+            mostrarTela(telaJogo);
+            atualizarJogo();
+        }
+
+        function gameOver() {
+            jogoRodando = false;
+            cancelAnimationFrame(animacaoFrame);
+            document.getElementById('pontuacao-final').innerText = pontuacaoAtual;
+            mostrarTela(telaGameOver);
+            document.getElementById('btn-salvar-score').disabled = false;
+            document.getElementById('btn-salvar-score').innerText = "Salvar no Ranking";
+        }
+
+        // --- BOTÕES E FLUXO ---
+        document.getElementById('btn-iniciar').addEventListener('click', () => {
+            let n = document.getElementById('nick').value.trim();
+            if (n === "") { alert("Digite um nick!"); return; }
+            nickAtual = n;
+            document.getElementById('display-nick').innerText = "Jogador: " + nickAtual;
+            iniciarJogo();
+        });
+
+        document.getElementById('btn-jogar-novamente').addEventListener('click', iniciarJogo);
+
+        // Salvar Score no Google Sheets
+        document.getElementById('btn-salvar-score').addEventListener('click', () => {
+            const btn = document.getElementById('btn-salvar-score');
+            btn.innerText = 'Salvando...';
+            btn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('Nick', nickAtual);
+            formData.append('Pontos', pontuacaoAtual);
+
+            fetch(scriptURL, { method: 'POST', body: formData })
                 .then(response => {
-                    sessionStorage.setItem('jaAvaliou', 'sim');
-                    form.classList.add('oculto');
-                    telaSucesso.classList.remove('oculto');
+                    alert("Pontuação salva com sucesso!");
+                    abrirRanking();
                 })
                 .catch(error => {
-                    console.error('Erro!', error.message);
-                    alert('Houve um erro de conexão ao enviar. Tente novamente.');
-                    btnSalvar.innerText = 'Enviar Avaliação';
-                    btnSalvar.disabled = false;
+                    alert('Erro ao salvar.');
+                    btn.innerText = 'Tentar Novamente';
+                    btn.disabled = false;
                 });
         });
-    </script>
 
+        // Ver Ranking
+        document.getElementById('btn-ver-ranking').addEventListener('click', abrirRanking);
+        document.getElementById('btn-voltar-ranking').addEventListener('click', () => mostrarTela(telaLogin));
+
+        function abrirRanking() {
+            mostrarTela(telaRanking);
+            const lista = document.getElementById('lista-ranking');
+            const status = document.getElementById('carregando-ranking');
+            lista.innerHTML = "";
+            status.style.display = "block";
+
+            fetch(scriptURL)
+                .then(res => res.json())
+                .then(data => {
+                    status.style.display = "none";
+                    if (data.length === 0) {
+                        lista.innerHTML = "<p style='text-align:center;'>Ninguém jogou ainda. Seja o primeiro!</p>";
+                        return;
+                    }
+                    data.forEach((jogador, index) => {
+                        let medalha = index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : "👾";
+                        lista.innerHTML += `
+                            <div class="ranking-item">
+                                <span>${medalha} <strong>${jogador.nick}</strong></span>
+                                <span style="color:#ff9800; font-weight:bold;">${jogador.pontos} pts</span>
+                            </div>
+                        `;
+                    });
+                }).catch(err => {
+                    status.innerText = "Erro ao carregar o ranking.";
+                });
+        }
+    </script>
 </body>
 </html>
