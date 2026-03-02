@@ -3,583 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dino Simulator - Pixel Edition</title>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <title>Parkour Simples</title>
     <style>
         body {
-            font-family: 'Press Start 2P', cursive;
-            background-color: #111;
-            color: #fff;
+            margin: 0;
             display: flex;
             flex-direction: column;
+            justify-content: center;
             align-items: center;
-            margin: 0;
-            padding: 20px;
-            overflow-x: hidden; /* Evita barra de rolagem quando o menu abre */
-        }
-        .container {
-            background: #222;
-            padding: 30px;
-            border-radius: 5px;
-            border: 4px solid #fff;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-            width: 100%;
-            max-width: 900px;
-            text-align: center;
-            box-sizing: border-box;
-            transition: 0.3s;
+            height: 100vh;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
         }
         canvas {
-            background-color: #ddd;
-            display: block;
-            margin: 0 auto;
-            width: 100%;
-            height: auto;
-            image-rendering: pixelated;
+            background-color: #fff;
+            border: 3px solid #333;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
             border-radius: 5px;
-            border: 4px solid #444;
         }
-        input[type="text"] {
-            font-family: 'Press Start 2P', cursive;
-            padding: 15px;
-            font-size: 14px;
-            border: 4px solid #fff;
-            background-color: #000;
-            color: #fff;
-            width: 80%;
-            margin-bottom: 20px;
+        .instrucoes {
+            margin-top: 15px;
+            color: #555;
             text-align: center;
-            text-transform: uppercase;
-        }
-        button {
-            font-family: 'Press Start 2P', cursive;
-            padding: 15px 20px;
-            background-color: #ff9800;
-            color: white;
-            border: 4px solid #fff;
-            font-size: 14px;
-            cursor: pointer;
-            margin: 10px;
-            text-transform: uppercase;
-        }
-        button:hover { background-color: #e68a00; transform: scale(1.05); }
-        button:disabled { background-color: #555; border-color: #333; cursor: not-allowed; }
-        .oculto { display: none !important; }
-        
-        .ranking-lista { text-align: left; background: #000; padding: 20px; border: 4px solid #fff; margin-top: 20px; font-size: 12px; line-height: 2; }
-        .ranking-item { display: flex; justify-content: space-between; border-bottom: 2px dashed #444; padding: 10px 0; }
-        
-        h1 { font-size: 24px; text-shadow: 2px 2px #ff9800; margin-bottom: 30px;}
-        h2 { font-size: 18px; margin: 20px 0;}
-
-        /* =========================================
-           ESTILOS DO MENU SECRETO DE DESENVOLVEDOR
-           ========================================= */
-        #dev-menu {
-            position: fixed;
-            top: 0;
-            right: -350px; /* Escondido fora da tela */
-            width: 300px;
-            height: 100%;
-            background: rgba(0, 20, 0, 0.95);
-            border-left: 4px solid #0f0;
-            padding: 20px;
-            box-sizing: border-box;
-            transition: right 0.3s ease-in-out;
-            z-index: 9999;
-            color: #0f0; /* Verde estilo Matrix/Hacker */
-            font-family: 'Courier New', Courier, monospace;
-            box-shadow: -5px 0 15px rgba(0,0,0,0.8);
-            overflow-y: auto;
-        }
-        #dev-menu.aberto { right: 0; }
-        #dev-menu h3 {
-            font-family: 'Press Start 2P', cursive;
-            font-size: 12px;
-            text-align: center;
-            border-bottom: 2px dashed #0f0;
-            padding-bottom: 10px;
-            margin-top: 0;
-            color: #fff;
-        }
-        .dev-linha { margin-bottom: 20px; display: flex; flex-direction: column; }
-        .dev-linha label { font-weight: bold; margin-bottom: 5px; font-size: 14px; }
-        .dev-linha input[type="range"] { width: 100%; cursor: pointer; }
-        .dev-linha input[type="checkbox"] { transform: scale(1.5); margin-right: 10px; cursor: pointer; }
-        .dev-btn {
-            background-color: #000;
-            color: #0f0;
-            border: 2px solid #0f0;
-            font-family: 'Press Start 2P', cursive;
-            font-size: 10px;
-            padding: 10px;
-            width: 100%;
-            margin: 5px 0;
-        }
-        .dev-btn:hover { background-color: #0f0; color: #000; transform: none; }
-        .fechar-dev {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: red;
-            color: white;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-            padding: 5px 10px;
-            font-family: Arial, sans-serif;
         }
     </style>
 </head>
 <body>
 
-    <div id="dev-menu">
-        <button class="fechar-dev" id="btn-fechar-dev">X</button>
-        <h3>DEV CONSOLE</h3>
-        
-        <div class="dev-linha" style="flex-direction: row; align-items: center;">
-            <input type="checkbox" id="dev-godmode">
-            <label for="dev-godmode" style="margin: 0;">God Mode (Sem Morte)</label>
-        </div>
-
-        <div class="dev-linha" style="flex-direction: row; align-items: center;">
-            <input type="checkbox" id="dev-spawn" checked>
-            <label for="dev-spawn" style="margin: 0;">Gerar Obstáculos</label>
-        </div>
-
-        <div class="dev-linha" style="flex-direction: row; align-items: center;">
-            <input type="checkbox" id="dev-travar-vel">
-            <label for="dev-travar-vel" style="margin: 0;">Travar Aceleração</label>
-        </div>
-
-        <div class="dev-linha">
-            <label for="dev-velocidade">Velocidade Atual: <span id="val-velocidade">4.5</span></label>
-            <input type="range" id="dev-velocidade" min="2" max="15" step="0.5" value="4.5">
-        </div>
-
-        <button class="dev-btn" id="dev-add-pontos">+ 1000 PONTOS</button>
-        <button class="dev-btn" id="dev-limpar-obstaculos">LIMPAR TELA</button>
-        
-        <p style="font-size: 10px; color: #555; text-align: center; margin-top: 30px;">
-            Aperte SHIFT + D para esconder
-        </p>
-    </div>
-
-    <div class="container" id="tela-login">
-        <h1>DINO SIMULATOR</h1>
-        <p style="font-size: 10px; line-height: 1.5; margin-bottom: 30px;">INSIRA SEU NICKNAME PARA INICIAR</p>
-        <input type="text" id="nick" placeholder="PLAYER 1" maxlength="10">
-        <br>
-        <button id="btn-iniciar">INICIAR JOGO</button>
-        <button id="btn-ver-ranking" style="background-color: #2196F3;">RANKING</button>
-    </div>
-
-    <div class="container oculto" id="tela-jogo">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 14px;">
-            <span id="display-nick" style="color: #ff9800;"></span>
-            <span id="display-pontos">HI: 00000</span>
-        </div>
-        <canvas id="gameCanvas" width="800" height="250"></canvas>
-        <p style="font-size: 10px; color: #aaa; margin-top: 20px;">ESPAÇO ou TOQUE para pular</p>
-    </div>
-
-    <div class="container oculto" id="tela-gameover">
-        <h1 style="color: #f44336; text-shadow: 2px 2px #fff;">GAME OVER</h1>
-        <h2>SCORE: <span id="pontuacao-final">0</span></h2>
-        <button id="btn-salvar-score">SALVAR SCORE</button>
-        <button id="btn-jogar-novamente" style="background-color: #4CAF50;">TENTAR NOVAMENTE</button>
-    </div>
-
-    <div class="container oculto" id="tela-ranking">
-        <h1>TOP 10 PLAYERS</h1>
-        <div id="carregando-ranking" style="font-size: 12px;">CARREGANDO DADOS...</div>
-        <div class="ranking-lista" id="lista-ranking"></div>
-        <button id="btn-voltar-ranking" style="margin-top: 30px;">VOLTAR</button>
+    <canvas id="jogoCanvas" width="600" height="200"></canvas>
+    
+    <div class="instrucoes">
+        <p><strong>Pressione ESPAÇO ou clique na tela para pular!</strong></p>
     </div>
 
     <script>
-        // ==========================================
-        // COLE O SEU LINK DO APPS SCRIPT AQUI ABAIXO
-        // ==========================================
-        const scriptURL = 'https://script.google.com/macros/s/AKfycbznnZdsQqZyKWOgCIgjYuaPQ8IeuJsMRX6bfark7LVmtkQ9HkxOnHTotQtD4frA059uew/exec';
-        
-        const telaLogin = document.getElementById('tela-login');
-        const telaJogo = document.getElementById('tela-jogo');
-        const telaGameOver = document.getElementById('tela-gameover');
-        const telaRanking = document.getElementById('tela-ranking');
-        
-        let nickAtual = "";
-        let pontuacaoAtual = 0;
-        let framesJogo = 0;
-        let jogoRodando = false;
-        let frameProximoObstaculo = 0;
+        const canvas = document.getElementById("jogoCanvas");
+        const ctx = canvas.getContext("2d");
 
-        // Variáveis do DEV MODE
-        let devGodMode = false;
-        let devSpawn = true;
-        let devTravarVel = false;
+        // Configurações do Personagem
+        let jogador = {
+            x: 50,
+            y: 150,
+            largura: 20,
+            altura: 20,
+            velocidadeY: 0,
+            gravidade: 0.6,
+            forcaPulo: -10,
+            noChao: false
+        };
 
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        
-        let dino = { x: 50, y: 190, largura: 34, altura: 40, dy: 0, pulando: false };
-        let obstaculos = []; 
-        let nuvens = [];
-        const gravidade = 0.8;
-        const forcaPulo = -13.5; 
-        const chaoY = 230;
-        
-        let velocidadeAtual = 4.5; 
-        let animacaoFrame;
+        let obstaculos = [];
+        let frame = 0;
+        let pontuacao = 0;
+        let jogoAcabou = false;
 
-        // ==========================================
-        // LÓGICA DO MENU SECRETO (DEV MODE)
-        // ==========================================
-        const devMenu = document.getElementById('dev-menu');
-        const inputGodMode = document.getElementById('dev-godmode');
-        const inputSpawn = document.getElementById('dev-spawn');
-        const inputTravarVel = document.getElementById('dev-travar-vel');
-        const rangeVelocidade = document.getElementById('dev-velocidade');
-        const textoVelocidade = document.getElementById('val-velocidade');
-
-        // Atalho Secreto: Shift + D
-        document.addEventListener('keydown', (e) => {
-            if (e.shiftKey && e.code === 'KeyD') {
-                devMenu.classList.toggle('aberto');
-            }
-            // Impede que a barra de espaço pule enquanto digita o Nick
-            if (e.code === 'Space' && e.target.tagName !== 'INPUT') {
-                e.preventDefault();
-                pular();
-            }
-        });
-
-        document.getElementById('btn-fechar-dev').addEventListener('click', () => {
-            devMenu.classList.remove('aberto');
-        });
-
-        // Controles do Dev Mode
-        inputGodMode.addEventListener('change', (e) => { devGodMode = e.target.checked; });
-        inputSpawn.addEventListener('change', (e) => { devSpawn = e.target.checked; });
-        inputTravarVel.addEventListener('change', (e) => { devTravarVel = e.target.checked; });
-        
-        rangeVelocidade.addEventListener('input', (e) => {
-            velocidadeAtual = parseFloat(e.target.value);
-            textoVelocidade.innerText = velocidadeAtual.toFixed(1);
-        });
-
-        document.getElementById('dev-add-pontos').addEventListener('click', () => {
-            pontuacaoAtual += 1000;
-        });
-
-        document.getElementById('dev-limpar-obstaculos').addEventListener('click', () => {
-            obstaculos = []; // Limpa a tela na hora
-        });
-
-        function atualizarPainelDev() {
-            // Sincroniza o painel com o jogo rodando
-            if (!devTravarVel) {
-                rangeVelocidade.value = velocidadeAtual;
-                textoVelocidade.innerText = velocidadeAtual.toFixed(1);
-            }
-        }
-
-        // ==========================================
-        // ÁUDIO E DESENHOS
-        // ==========================================
-        let audioCtx;
-        function iniciarAudio() {
-            if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
-            if (audioCtx.state === 'suspended') { audioCtx.resume(); }
-        }
-
-        function tocarSom(tipo) {
-            if (!audioCtx) return;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            const agora = audioCtx.currentTime;
-
-            if (tipo === 'pulo') {
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(300, agora);
-                osc.frequency.exponentialRampToValueAtTime(600, agora + 0.1);
-                gain.gain.setValueAtTime(0.1, agora);
-                gain.gain.exponentialRampToValueAtTime(0.01, agora + 0.1);
-                osc.start(agora);
-                osc.stop(agora + 0.1);
-            } else if (tipo === 'ponto') {
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(800, agora);
-                osc.frequency.setValueAtTime(1200, agora + 0.05);
-                gain.gain.setValueAtTime(0.1, agora);
-                gain.gain.exponentialRampToValueAtTime(0.01, agora + 0.1);
-                osc.start(agora);
-                osc.stop(agora + 0.1);
-            } else if (tipo === 'morte') {
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(150, agora);
-                osc.frequency.exponentialRampToValueAtTime(50, agora + 0.3);
-                gain.gain.setValueAtTime(0.1, agora);
-                gain.gain.exponentialRampToValueAtTime(0.01, agora + 0.3);
-                osc.start(agora);
-                osc.stop(agora + 0.3);
-            }
-        }
-
-        function desenharDino() {
-            // Se estiver em God Mode, deixa o Dino meio transparente e esverdeado
-            ctx.fillStyle = devGodMode ? "rgba(0, 255, 0, 0.6)" : "#333";
-            ctx.fillRect(dino.x + 14, dino.y, 16, 16); 
-            ctx.fillRect(dino.x + 6, dino.y + 16, 20, 16); 
-            ctx.fillRect(dino.x, dino.y + 16, 6, 8); 
-            ctx.fillRect(dino.x + 26, dino.y + 18, 8, 4); 
-            ctx.clearRect(dino.x + 18, dino.y + 4, 4, 4);
-
-            if (!dino.pulando) {
-                if (Math.floor(framesJogo / 8) % 2 === 0) {
-                    ctx.fillRect(dino.x + 10, dino.y + 32, 6, 8); 
-                    ctx.fillRect(dino.x + 20, dino.y + 26, 6, 8); 
-                } else {
-                    ctx.fillRect(dino.x + 10, dino.y + 26, 6, 8); 
-                    ctx.fillRect(dino.x + 20, dino.y + 32, 6, 8); 
-                }
-            } else {
-                ctx.fillRect(dino.x + 10, dino.y + 32, 6, 8);
-                ctx.fillRect(dino.x + 20, dino.y + 32, 6, 8);
-            }
-        }
-
-        function desenharCacto(x, y) {
-            ctx.fillStyle = "#2e7d32";
-            ctx.fillRect(x + 6, y, 6, 40); 
-            ctx.fillRect(x, y + 10, 4, 16); 
-            ctx.fillRect(x + 14, y + 5, 4, 16); 
-            ctx.fillRect(x + 2, y + 26, 4, 4); 
-            ctx.fillRect(x + 12, y + 21, 4, 4); 
-        }
-
-        function desenharPtero(x, y) {
-            ctx.fillStyle = "#555";
-            ctx.fillRect(x + 10, y + 8, 14, 6); 
-            ctx.fillRect(x + 24, y + 4, 8, 8); 
-            ctx.fillRect(x + 32, y + 6, 8, 4); 
-            
-            if (Math.floor(framesJogo / 15) % 2 === 0) { 
-                ctx.fillRect(x + 12, y, 10, 8); 
-                ctx.fillRect(x + 16, y - 6, 8, 6);
-            } else { 
-                ctx.fillRect(x + 12, y + 14, 10, 8); 
-                ctx.fillRect(x + 16, y + 22, 8, 6);
-            }
-        }
-
-        function mostrarTela(tela) {
-            telaLogin.classList.add('oculto');
-            telaJogo.classList.add('oculto');
-            telaGameOver.classList.add('oculto');
-            telaRanking.classList.add('oculto');
-            tela.classList.remove('oculto');
-        }
-
+        // Função para pular
         function pular() {
-            if (!dino.pulando && jogoRodando) {
-                dino.dy = forcaPulo;
-                dino.pulando = true;
-                tocarSom('pulo');
+            if (jogador.noChao && !jogoAcabou) {
+                jogador.velocidadeY = jogador.forcaPulo;
+                jogador.noChao = false;
+            } else if (jogoAcabou) {
+                reiniciarJogo();
             }
         }
-        
-        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); pular(); });
 
-        function atualizarJogo() {
-            if (!jogoRodando) return;
-            framesJogo++;
+        // Controles
+        document.addEventListener("keydown", (e) => {
+            if (e.code === "Space") pular();
+        });
+        canvas.addEventListener("mousedown", pular);
+        canvas.addEventListener("touchstart", pular); // Para funcionar no celular
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "#aaa";
-            ctx.fillRect(0, chaoY, canvas.width, 4); 
+        function reiniciarJogo() {
+            jogador.y = 150;
+            jogador.velocidadeY = 0;
+            obstaculos = [];
+            pontuacao = 0;
+            frame = 0;
+            jogoAcabou = false;
+            loopMotor();
+        }
 
-            if (framesJogo % 120 === 0) {
-                nuvens.push({ x: canvas.width, y: Math.random() * 80 + 20 });
-            }
-            ctx.fillStyle = "#fff";
-            nuvens = nuvens.filter(n => {
-                n.x -= velocidadeAtual * 0.3; 
-                ctx.fillRect(n.x, n.y, 40, 10);
-                ctx.fillRect(n.x + 10, n.y - 10, 20, 10);
-                return n.x > -50;
-            });
-
-            dino.dy += gravidade;
-            dino.y += dino.dy;
+        // O "Motor" do jogo que roda a cada quadro
+        function loopMotor() {
+            if (jogoAcabou) return;
+            requestAnimationFrame(loopMotor);
             
-            if (dino.y >= chaoY - dino.altura) {
-                dino.y = chaoY - dino.altura;
-                dino.pulando = false;
+            // Limpa a tela
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Física do Jogador
+            jogador.velocidadeY += jogador.gravidade;
+            jogador.y += jogador.velocidadeY;
+
+            // Colisão com o chão
+            if (jogador.y + jogador.altura >= canvas.height) {
+                jogador.y = canvas.height - jogador.altura;
+                jogador.velocidadeY = 0;
+                jogador.noChao = true;
             }
 
-            desenharDino();
+            // Desenha o Jogador
+            ctx.fillStyle = "#007BFF"; // Azul
+            ctx.fillRect(jogador.x, jogador.y, jogador.largura, jogador.altura);
 
-            // SÓ GERA OBSTÁCULOS SE O BOTÃO "GERAR OBSTÁCULOS" NO DEV MENU ESTIVER ATIVADO
-            if (devSpawn && framesJogo >= frameProximoObstaculo) {
-                let tipo = "cacto";
-                
-                if (pontuacaoAtual > 400 && Math.random() > 0.6) {
-                    tipo = "ptero";
-                }
-
-                if (tipo === "ptero") {
-                    let alturaPtero = Math.random() > 0.5 ? chaoY - 45 : chaoY - 75;
-                    obstaculos.push({ tipo: "ptero", x: canvas.width, y: alturaPtero, largura: 36, altura: 20 });
-                } else {
-                    let maxCactos = 1;
-                    if (pontuacaoAtual >= 200) maxCactos = 2; 
-                    if (pontuacaoAtual >= 400) maxCactos = 3; 
-
-                    let qtdCactos = Math.floor(Math.random() * maxCactos) + 1; 
-                    
-                    for (let i = 0; i < qtdCactos; i++) {
-                        obstaculos.push({ 
-                            tipo: "cacto",
-                            x: canvas.width + (i * 20), 
-                            y: chaoY - 40, 
-                            largura: 18, 
-                            altura: 40 
-                        });
-                    }
-                }
-
-                let gapMinimo = 60 + (velocidadeAtual * 2.5); 
-                let gapAleatorio = Math.random() * 80;
-                frameProximoObstaculo = framesJogo + gapMinimo + gapAleatorio;
+            // Criação de Obstáculos
+            if (frame % 90 === 0) { // Cria um obstáculo a cada 90 frames
+                let alturaObstaculo = 20 + Math.random() * 20; // Altura aleatória
+                obstaculos.push({
+                    x: canvas.width,
+                    y: canvas.height - alturaObstaculo,
+                    largura: 20,
+                    altura: alturaObstaculo
+                });
             }
 
+            // Move e desenha os obstáculos
+            ctx.fillStyle = "#DC3545"; // Vermelho
             for (let i = 0; i < obstaculos.length; i++) {
                 let obs = obstaculos[i];
-                obs.x -= velocidadeAtual; 
-                
-                if (obs.tipo === "cacto") { desenharCacto(obs.x, obs.y); } 
-                else { desenharPtero(obs.x, obs.y); }
+                obs.x -= 4; // Velocidade do obstáculo
+                ctx.fillRect(obs.x, obs.y, obs.largura, obs.altura);
 
-                // COLISÃO: Só dá Game Over se o God Mode estiver desligado
-                if (!devGodMode && 
-                    dino.x + 8 < obs.x + obs.largura && dino.x + dino.largura - 8 > obs.x && 
-                    dino.y + 8 < obs.y + obs.altura && dino.altura + dino.y > obs.y) {
-                    gameOver();
+                // Sistema de Colisão Simples
+                if (jogador.x < obs.x + obs.largura &&
+                    jogador.x + jogador.largura > obs.x &&
+                    jogador.y < obs.y + obs.altura &&
+                    jogador.altura + jogador.y > obs.y) {
+                    
+                    jogoAcabou = true;
+                    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = "white";
+                    ctx.font = "24px Arial";
+                    ctx.fillText("Game Over!", 230, 90);
+                    ctx.font = "16px Arial";
+                    ctx.fillText("Clique ou pressione Espaço para tentar de novo", 140, 130);
                 }
             }
 
-            obstaculos = obstaculos.filter(obs => obs.x > -50);
+            // Remove obstáculos que já saíram da tela para não pesar a memória
+            obstaculos = obstaculos.filter(obs => obs.x + obs.largura > 0);
 
-            if (framesJogo % 5 === 0) {
-                pontuacaoAtual++;
-                let displayPts = pontuacaoAtual.toString().padStart(5, '0');
-                document.getElementById('display-pontos').innerText = "HI: " + displayPts;
-
-                if (pontuacaoAtual > 0 && pontuacaoAtual % 100 === 0) {
-                    tocarSom('ponto');
-                    // Só acelera o jogo se o botão de travar não estiver marcado
-                    if (!devTravarVel) {
-                        velocidadeAtual += 0.4; 
-                    }
-                }
-            }
-
-            atualizarPainelDev();
-            animacaoFrame = requestAnimationFrame(atualizarJogo);
+            // Pontuação e Frames
+            frame++;
+            pontuacao++;
+            ctx.fillStyle = "#333";
+            ctx.font = "16px Arial";
+            ctx.fillText("Pontos: " + Math.floor(pontuacao / 10), 10, 25);
         }
 
-        function iniciarJogo() {
-            iniciarAudio(); 
-            dino.y = chaoY - dino.altura;
-            dino.dy = 0;
-            obstaculos = [];
-            nuvens = [];
-            pontuacaoAtual = 0;
-            framesJogo = 0;
-            frameProximoObstaculo = 50; 
-            
-            // Se o usuário não travou a velocidade no menu, reseta
-            if (!devTravarVel) { velocidadeAtual = 4.5; }
-            
-            document.getElementById('display-pontos').innerText = "HI: 00000";
-            jogoRodando = true;
-            mostrarTela(telaJogo);
-            atualizarJogo();
-        }
-
-        function gameOver() {
-            jogoRodando = false;
-            tocarSom('morte');
-            cancelAnimationFrame(animacaoFrame);
-            document.getElementById('pontuacao-final').innerText = pontuacaoAtual;
-            mostrarTela(telaGameOver);
-            document.getElementById('btn-salvar-score').disabled = false;
-            document.getElementById('btn-salvar-score').innerText = "SALVAR SCORE";
-        }
-
-        document.getElementById('btn-iniciar').addEventListener('click', () => {
-            let n = document.getElementById('nick').value.trim();
-            if (n === "") { alert("DIGITE UM NICK!"); return; }
-            nickAtual = n;
-            document.getElementById('display-nick').innerText = nickAtual;
-            iniciarJogo();
-        });
-
-        document.getElementById('btn-jogar-novamente').addEventListener('click', iniciarJogo);
-
-        document.getElementById('btn-salvar-score').addEventListener('click', () => {
-            const btn = document.getElementById('btn-salvar-score');
-            btn.innerText = 'SALVANDO...';
-            btn.disabled = true;
-
-            const dados = new URLSearchParams();
-            dados.append('Nick', nickAtual);
-            dados.append('Pontos', pontuacaoAtual);
-
-            fetch(scriptURL, { method: 'POST', body: dados, mode: 'no-cors' })
-                .then(() => { abrirRanking(); })
-                .catch(error => {
-                    alert('ERRO AO SALVAR O SCORE.');
-                    btn.innerText = 'TENTAR NOVAMENTE';
-                    btn.disabled = false;
-                });
-        });
-
-        document.getElementById('btn-ver-ranking').addEventListener('click', abrirRanking);
-        document.getElementById('btn-voltar-ranking').addEventListener('click', () => mostrarTela(telaLogin));
-
-        function abrirRanking() {
-            mostrarTela(telaRanking);
-            const lista = document.getElementById('lista-ranking');
-            const status = document.getElementById('carregando-ranking');
-            lista.innerHTML = "";
-            status.style.display = "block";
-
-            fetch(scriptURL)
-                .then(res => res.json())
-                .then(data => {
-                    status.style.display = "none";
-                    if (data.length === 0) {
-                        lista.innerHTML = "<p style='text-align:center;'>NENHUM REGISTRO AINDA.</p>";
-                        return;
-                    }
-                    data.forEach((jogador, index) => {
-                        let medalha = index === 0 ? "1ST" : index === 1 ? "2ND" : index === 2 ? "3RD" : (index + 1) + "TH";
-                        lista.innerHTML += `
-                            <div class="ranking-item">
-                                <span style="color:#ff9800;">${medalha}</span>
-                                <span>${jogador.nick}</span>
-                                <span>${jogador.pontos}</span>
-                            </div>
-                        `;
-                    });
-                }).catch(err => {
-                    status.innerText = "ERRO AO CONECTAR COM O SERVIDOR.";
-                });
-        }
+        // Inicia o jogo
+        loopMotor();
     </script>
 </body>
 </html>
