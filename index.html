@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Parkour Multiplayer Online</title>
+    <title>Parkour Multiplayer</title>
     <style>
         body {
             margin: 0;
@@ -29,64 +29,52 @@
     <div class="status" id="statusTexto">Conectando ao servidor...</div>
 
     <script type="module">
-        // 1. IMPORTANDO O FIREBASE
+        // 1. IMPORTAÇÃO CORRETA PARA HTML (usando links HTTPs em vez de "firebase/app")
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getDatabase, ref, set, onValue, onDisconnect, remove } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+        import { getDatabase, ref, set, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
-        // =========================================================
-        // 2. SUAS CHAVES DO FIREBASE
+        // 2. SUAS CHAVES DO FIREBASE (já arrumadas com o databaseURL)
         const firebaseConfig = {
             apiKey: "AIzaSyB5e1np_A_YmEruPJ8tvXbitNA07X42CeM",
             authDomain: "parkour-871d9.firebaseapp.com",
-            databaseURL: "https://parkour-871d9-default-rtdb.firebaseio.com", // Adicionado para o banco de dados funcionar!
+            databaseURL: "https://parkour-871d9-default-rtdb.firebaseio.com",
             projectId: "parkour-871d9",
             storageBucket: "parkour-871d9.firebasestorage.app",
             messagingSenderId: "556878698255",
             appId: "1:556878698255:web:1fd4d9d2013bd15d1c107a",
             measurementId: "G-RT17LJYHYF"
         };
-        // =========================================================
 
-        // Inicializa o Firebase
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // Gera um ID único e aleatório para este jogador
+        // Cria o jogador
         const meuId = "jogador_" + Math.random().toString(36).substr(2, 9);
         const jogadorRef = ref(db, 'jogadores/' + meuId);
-
-        // Se o jogador fechar a aba, remove ele do banco de dados
         onDisconnect(jogadorRef).remove();
 
         const canvas = document.getElementById("jogoCanvas");
         const ctx = canvas.getContext("2d");
 
-        // Nosso jogador principal
         let meuJogador = {
             id: meuId,
             y: 150,
-            cor: "#" + Math.floor(Math.random()*16777215).toString(16), // Cor aleatória
+            cor: "#" + Math.floor(Math.random()*16777215).toString(16),
             velocidadeY: 0,
             noChao: true
         };
 
-        // Lista de todos os jogadores conectados
         let todosJogadores = {};
-
         document.getElementById("statusTexto").innerText = "Conectado! Pressione ESPAÇO para pular.";
 
-        // Escuta as mudanças no banco de dados para ver os outros jogadores
+        // Escuta o servidor
         const jogadoresRef = ref(db, 'jogadores');
         onValue(jogadoresRef, (snapshot) => {
             const dados = snapshot.val();
-            if (dados) {
-                todosJogadores = dados;
-            } else {
-                todosJogadores = {};
-            }
+            todosJogadores = dados ? dados : {};
         });
 
-        // Controles de pulo
+        // Controles
         function pular() {
             if (meuJogador.noChao) {
                 meuJogador.velocidadeY = -10;
@@ -96,51 +84,43 @@
         document.addEventListener("keydown", (e) => { if (e.code === "Space") pular(); });
         canvas.addEventListener("mousedown", pular);
 
-        // Função para atualizar nossa posição no Firebase
-        function enviarMeusDados() {
-            set(jogadorRef, {
-                y: meuJogador.y,
-                cor: meuJogador.cor
-            });
-        }
+        // Envia dados para o servidor
+        setInterval(() => {
+            set(jogadorRef, { y: meuJogador.y, cor: meuJogador.cor });
+        }, 30);
 
-        // Motor do jogo
+        // Roda o jogo
         function loopMotor() {
             requestAnimationFrame(loopMotor);
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Aplica gravidade no nosso jogador
-            meuJogador.velocidadeY += 0.6; // gravidade
+            // Gravidade
+            meuJogador.velocidadeY += 0.6; 
             meuJogador.y += meuJogador.velocidadeY;
 
-            // Colisão com o chão
             if (meuJogador.y >= 150) {
                 meuJogador.y = 150;
                 meuJogador.velocidadeY = 0;
                 meuJogador.noChao = true;
             }
 
-            // Envia a posição atualizada para o servidor a cada quadro
-            enviarMeusDados();
+            // Desenha você (com borda preta)
+            ctx.fillStyle = meuJogador.cor;
+            ctx.fillRect(50, meuJogador.y, 20, 20);
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(50, meuJogador.y, 20, 20);
 
-            // Desenha TODOS os jogadores na tela (você e seus amigos)
+            // Desenha os outros
             for (let id in todosJogadores) {
-                let jogadorAlvo = todosJogadores[id];
-                
-                ctx.fillStyle = jogadorAlvo.cor;
-                // Todos ficam na mesma posição horizontal (x=50) para parecerem estar na mesma pista
-                ctx.fillRect(50, jogadorAlvo.y, 20, 20);
-                
-                // Coloca um contorno se for você mesmo
-                if (id === meuId) {
-                    ctx.strokeStyle = "black";
-                    ctx.strokeRect(50, jogadorAlvo.y, 20, 20);
+                if (id !== meuId) {
+                    let jogadorAlvo = todosJogadores[id];
+                    ctx.fillStyle = jogadorAlvo.cor;
+                    ctx.fillRect(50, jogadorAlvo.y, 20, 20);
                 }
             }
         }
 
-        // Inicia o jogo
-        enviarMeusDados();
         loopMotor();
     </script>
 </body>
