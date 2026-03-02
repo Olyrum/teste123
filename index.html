@@ -29,11 +29,9 @@
     <div class="status" id="statusTexto">Conectando ao servidor...</div>
 
     <script type="module">
-        // 1. IMPORTAÇÕES
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getDatabase, ref, set, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
-        // 2. SUAS CHAVES DO FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyB5e1np_A_YmEruPJ8tvXbitNA07X42CeM",
             authDomain: "parkour-871d9.firebaseapp.com",
@@ -48,10 +46,9 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // 3. CONFIGURAÇÃO DO JOGADOR
         const meuId = "jogador_" + Math.random().toString(36).substr(2, 9);
         const jogadorRef = ref(db, 'jogadores/' + meuId);
-        onDisconnect(jogadorRef).remove(); // Apaga do servidor ao fechar a aba
+        onDisconnect(jogadorRef).remove(); 
 
         const canvas = document.getElementById("jogoCanvas");
         const ctx = canvas.getContext("2d");
@@ -61,68 +58,84 @@
             y: 150,
             cor: "#" + Math.floor(Math.random()*16777215).toString(16),
             velocidadeY: 0,
-            noChao: true
+            noChao: true,
+            vivo: true // <-- NOVO: Diz se você está vivo ou morto
         };
 
         let todosJogadores = {};
         
-        // NOVAS VARIÁVEIS PARA O JOGO
         let obstaculos = [];
         let frame = 0;
         let pontuacao = 0;
+        let pontuacaoMaxima = 0; // <-- NOVO: Guarda o recorde
         let jogoRodando = true;
 
         document.getElementById("statusTexto").innerText = "Conectado! Pressione ESPAÇO para pular.";
 
-        // Escuta os outros jogadores
         const jogadoresRef = ref(db, 'jogadores');
         onValue(jogadoresRef, (snapshot) => {
             const dados = snapshot.val();
             todosJogadores = dados ? dados : {};
         });
 
-        // Controles de Pulo e Reinício
         function pular() {
             if (meuJogador.noChao && jogoRodando) {
                 meuJogador.velocidadeY = -10;
                 meuJogador.noChao = false;
             } else if (!jogoRodando) {
-                // Se bateu, o pulo reinicia o jogo
+                // Ressuscita e zera tudo
                 obstaculos = [];
                 pontuacao = 0;
                 frame = 0;
                 meuJogador.y = 150;
                 meuJogador.velocidadeY = 0;
+                meuJogador.vivo = true; // Volta a ficar visível
                 jogoRodando = true;
             }
         }
         document.addEventListener("keydown", (e) => { if (e.code === "Space") pular(); });
         canvas.addEventListener("mousedown", pular);
 
-        // Envia sua posição para o Firebase constantemente
+        // Envia sua posição E SEU STATUS DE VIDA para o Firebase
         setInterval(() => {
-            set(jogadorRef, { y: meuJogador.y, cor: meuJogador.cor });
+            set(jogadorRef, { 
+                y: meuJogador.y, 
+                cor: meuJogador.cor, 
+                vivo: meuJogador.vivo // Envia para os outros saberem se você bateu
+            });
         }, 30);
 
-        // 4. MOTOR DO JOGO
         function loopMotor() {
             requestAnimationFrame(loopMotor);
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Tela de Game Over
+            // ==========================================
+            // TELA DE GAME OVER (Agora com Recorde)
+            // ==========================================
             if (!jogoRodando) {
-                ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+                ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
                 ctx.fillStyle = "white";
-                ctx.font = "24px Arial";
-                ctx.fillText("Bateu!", 260, 90);
-                ctx.font = "16px Arial";
-                ctx.fillText("Pressione Espaço para tentar de novo", 170, 130);
-                return; // Pausa a animação dos blocos
+                ctx.font = "bold 24px Arial";
+                ctx.fillText("Você Bateu!", 230, 70);
+                
+                // Mostra a pontuação
+                let pontosAtuais = Math.floor(pontuacao / 10);
+                ctx.font = "18px Arial";
+                ctx.fillStyle = "#FFD700"; // Cor dourada
+                ctx.fillText("Recorde: " + pontuacaoMaxima, 255, 105);
+                ctx.fillStyle = "white";
+                ctx.fillText("Pontos dessa rodada: " + pontosAtuais, 215, 130);
+
+                ctx.font = "14px Arial";
+                ctx.fillStyle = "#ccc";
+                ctx.fillText("Pressione Espaço para tentar de novo", 185, 170);
+                return; // Pausa a animação
             }
 
-            // Física do seu boneco
-            meuJogador.velocidadeY += 0.6; // Gravidade
+            // Física
+            meuJogador.velocidadeY += 0.6; 
             meuJogador.y += meuJogador.velocidadeY;
 
             if (meuJogador.y >= 150) {
@@ -131,66 +144,70 @@
                 meuJogador.noChao = true;
             }
 
-            // ==========================================
-            // SISTEMA DE OBSTÁCULOS E PONTOS
-            // ==========================================
             frame++;
             pontuacao++;
 
-            // Cria um obstáculo novo de tempos em tempos
             if (frame % 90 === 0) {
-                obstaculos.push({
-                    x: canvas.width,
-                    y: 130, // Fica rente ao chão
-                    largura: 20,
-                    altura: 40
-                });
+                obstaculos.push({ x: canvas.width, y: 130, largura: 20, altura: 40 });
             }
 
-            // Desenha e move os obstáculos vermelhos
             ctx.fillStyle = "#DC3545"; 
             for (let i = 0; i < obstaculos.length; i++) {
                 let obs = obstaculos[i];
-                obs.x -= 4; // Velocidade que o bloco vem na sua direção
+                obs.x -= 4; 
                 ctx.fillRect(obs.x, obs.y, obs.largura, obs.altura);
 
-                // Verifica se você bateu no bloco
-                if (50 < obs.x + obs.largura && // 50 é a posição X fixa do jogador
+                // COLISÃO: O que acontece quando bate
+                if (50 < obs.x + obs.largura && 
                     50 + 20 > obs.x &&
                     meuJogador.y < obs.y + obs.altura &&
                     20 + meuJogador.y > obs.y) {
                     
-                    jogoRodando = false; // Bateu!
+                    jogoRodando = false; 
+                    meuJogador.vivo = false; // Fica invisível
+                    
+                    // Verifica se bateu o recorde
+                    let pontosAtuais = Math.floor(pontuacao / 10);
+                    if (pontosAtuais > pontuacaoMaxima) {
+                        pontuacaoMaxima = pontosAtuais;
+                    }
                 }
             }
 
-            // Limpa obstáculos antigos da memória
             obstaculos = obstaculos.filter(obs => obs.x + obs.largura > 0);
 
-            // Mostra os pontos
+            // Placar em tempo real
             ctx.fillStyle = "#333";
-            ctx.font = "16px Arial";
+            ctx.font = "bold 16px Arial";
             ctx.fillText("Pontos: " + Math.floor(pontuacao / 10), 10, 25);
+            ctx.fillStyle = "#666";
+            ctx.font = "14px Arial";
+            ctx.fillText("Recorde: " + pontuacaoMaxima, 10, 45);
 
             // ==========================================
-            // DESENHA OS JOGADORES
+            // DESENHA OS JOGADORES (Só se estiverem vivos)
             // ==========================================
             
-            // 1. Desenha os outros
+            // Desenha os outros
             for (let id in todosJogadores) {
                 if (id !== meuId) {
                     let jogadorAlvo = todosJogadores[id];
-                    ctx.fillStyle = jogadorAlvo.cor;
-                    ctx.fillRect(50, jogadorAlvo.y, 20, 20);
+                    // Só desenha se a propriedade "vivo" for verdadeira
+                    if (jogadorAlvo.vivo) { 
+                        ctx.fillStyle = jogadorAlvo.cor;
+                        ctx.fillRect(50, jogadorAlvo.y, 20, 20);
+                    }
                 }
             }
 
-            // 2. Desenha você (com borda preta para destacar)
-            ctx.fillStyle = meuJogador.cor;
-            ctx.fillRect(50, meuJogador.y, 20, 20);
-            ctx.strokeStyle = "black";
-            ctx.lineWidth = 2;
-            ctx.strokeRect(50, meuJogador.y, 20, 20);
+            // Desenha você (só se estiver vivo)
+            if (meuJogador.vivo) {
+                ctx.fillStyle = meuJogador.cor;
+                ctx.fillRect(50, meuJogador.y, 20, 20);
+                ctx.strokeStyle = "black";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(50, meuJogador.y, 20, 20);
+            }
         }
 
         loopMotor();
