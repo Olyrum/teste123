@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Parkour Simples</title>
+    <title>Parkour Multiplayer Online</title>
     <style>
         body {
             margin: 0;
@@ -12,148 +12,135 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #f0f0f0;
+            background-color: #e0e0e0;
             font-family: Arial, sans-serif;
         }
         canvas {
             background-color: #fff;
             border: 3px solid #333;
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            border-radius: 5px;
         }
-        .instrucoes {
-            margin-top: 15px;
-            color: #555;
-            text-align: center;
-        }
+        .status { margin-top: 10px; font-weight: bold; color: #333; }
     </style>
 </head>
 <body>
 
     <canvas id="jogoCanvas" width="600" height="200"></canvas>
-    
-    <div class="instrucoes">
-        <p><strong>Pressione ESPAÇO ou clique na tela para pular!</strong></p>
-    </div>
+    <div class="status" id="statusTexto">Conectando ao servidor...</div>
 
-    <script>
+    <script type="module">
+        // 1. IMPORTANDO O FIREBASE
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getDatabase, ref, set, onValue, onDisconnect, remove } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+        // =========================================================
+        // 2. SUAS CHAVES DO FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyB5e1np_A_YmEruPJ8tvXbitNA07X42CeM",
+            authDomain: "parkour-871d9.firebaseapp.com",
+            databaseURL: "https://parkour-871d9-default-rtdb.firebaseio.com", // Adicionado para o banco de dados funcionar!
+            projectId: "parkour-871d9",
+            storageBucket: "parkour-871d9.firebasestorage.app",
+            messagingSenderId: "556878698255",
+            appId: "1:556878698255:web:1fd4d9d2013bd15d1c107a",
+            measurementId: "G-RT17LJYHYF"
+        };
+        // =========================================================
+
+        // Inicializa o Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Gera um ID único e aleatório para este jogador
+        const meuId = "jogador_" + Math.random().toString(36).substr(2, 9);
+        const jogadorRef = ref(db, 'jogadores/' + meuId);
+
+        // Se o jogador fechar a aba, remove ele do banco de dados
+        onDisconnect(jogadorRef).remove();
+
         const canvas = document.getElementById("jogoCanvas");
         const ctx = canvas.getContext("2d");
 
-        // Configurações do Personagem
-        let jogador = {
-            x: 50,
+        // Nosso jogador principal
+        let meuJogador = {
+            id: meuId,
             y: 150,
-            largura: 20,
-            altura: 20,
+            cor: "#" + Math.floor(Math.random()*16777215).toString(16), // Cor aleatória
             velocidadeY: 0,
-            gravidade: 0.6,
-            forcaPulo: -10,
-            noChao: false
+            noChao: true
         };
 
-        let obstaculos = [];
-        let frame = 0;
-        let pontuacao = 0;
-        let jogoAcabou = false;
+        // Lista de todos os jogadores conectados
+        let todosJogadores = {};
 
-        // Função para pular
+        document.getElementById("statusTexto").innerText = "Conectado! Pressione ESPAÇO para pular.";
+
+        // Escuta as mudanças no banco de dados para ver os outros jogadores
+        const jogadoresRef = ref(db, 'jogadores');
+        onValue(jogadoresRef, (snapshot) => {
+            const dados = snapshot.val();
+            if (dados) {
+                todosJogadores = dados;
+            } else {
+                todosJogadores = {};
+            }
+        });
+
+        // Controles de pulo
         function pular() {
-            if (jogador.noChao && !jogoAcabou) {
-                jogador.velocidadeY = jogador.forcaPulo;
-                jogador.noChao = false;
-            } else if (jogoAcabou) {
-                reiniciarJogo();
+            if (meuJogador.noChao) {
+                meuJogador.velocidadeY = -10;
+                meuJogador.noChao = false;
             }
         }
-
-        // Controles
-        document.addEventListener("keydown", (e) => {
-            if (e.code === "Space") pular();
-        });
+        document.addEventListener("keydown", (e) => { if (e.code === "Space") pular(); });
         canvas.addEventListener("mousedown", pular);
-        canvas.addEventListener("touchstart", pular); // Para funcionar no celular
 
-        function reiniciarJogo() {
-            jogador.y = 150;
-            jogador.velocidadeY = 0;
-            obstaculos = [];
-            pontuacao = 0;
-            frame = 0;
-            jogoAcabou = false;
-            loopMotor();
+        // Função para atualizar nossa posição no Firebase
+        function enviarMeusDados() {
+            set(jogadorRef, {
+                y: meuJogador.y,
+                cor: meuJogador.cor
+            });
         }
 
-        // O "Motor" do jogo que roda a cada quadro
+        // Motor do jogo
         function loopMotor() {
-            if (jogoAcabou) return;
             requestAnimationFrame(loopMotor);
-            
-            // Limpa a tela
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Física do Jogador
-            jogador.velocidadeY += jogador.gravidade;
-            jogador.y += jogador.velocidadeY;
+            // Aplica gravidade no nosso jogador
+            meuJogador.velocidadeY += 0.6; // gravidade
+            meuJogador.y += meuJogador.velocidadeY;
 
             // Colisão com o chão
-            if (jogador.y + jogador.altura >= canvas.height) {
-                jogador.y = canvas.height - jogador.altura;
-                jogador.velocidadeY = 0;
-                jogador.noChao = true;
+            if (meuJogador.y >= 150) {
+                meuJogador.y = 150;
+                meuJogador.velocidadeY = 0;
+                meuJogador.noChao = true;
             }
 
-            // Desenha o Jogador
-            ctx.fillStyle = "#007BFF"; // Azul
-            ctx.fillRect(jogador.x, jogador.y, jogador.largura, jogador.altura);
+            // Envia a posição atualizada para o servidor a cada quadro
+            enviarMeusDados();
 
-            // Criação de Obstáculos
-            if (frame % 90 === 0) { // Cria um obstáculo a cada 90 frames
-                let alturaObstaculo = 20 + Math.random() * 20; // Altura aleatória
-                obstaculos.push({
-                    x: canvas.width,
-                    y: canvas.height - alturaObstaculo,
-                    largura: 20,
-                    altura: alturaObstaculo
-                });
-            }
-
-            // Move e desenha os obstáculos
-            ctx.fillStyle = "#DC3545"; // Vermelho
-            for (let i = 0; i < obstaculos.length; i++) {
-                let obs = obstaculos[i];
-                obs.x -= 4; // Velocidade do obstáculo
-                ctx.fillRect(obs.x, obs.y, obs.largura, obs.altura);
-
-                // Sistema de Colisão Simples
-                if (jogador.x < obs.x + obs.largura &&
-                    jogador.x + jogador.largura > obs.x &&
-                    jogador.y < obs.y + obs.altura &&
-                    jogador.altura + jogador.y > obs.y) {
-                    
-                    jogoAcabou = true;
-                    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    ctx.fillStyle = "white";
-                    ctx.font = "24px Arial";
-                    ctx.fillText("Game Over!", 230, 90);
-                    ctx.font = "16px Arial";
-                    ctx.fillText("Clique ou pressione Espaço para tentar de novo", 140, 130);
+            // Desenha TODOS os jogadores na tela (você e seus amigos)
+            for (let id in todosJogadores) {
+                let jogadorAlvo = todosJogadores[id];
+                
+                ctx.fillStyle = jogadorAlvo.cor;
+                // Todos ficam na mesma posição horizontal (x=50) para parecerem estar na mesma pista
+                ctx.fillRect(50, jogadorAlvo.y, 20, 20);
+                
+                // Coloca um contorno se for você mesmo
+                if (id === meuId) {
+                    ctx.strokeStyle = "black";
+                    ctx.strokeRect(50, jogadorAlvo.y, 20, 20);
                 }
             }
-
-            // Remove obstáculos que já saíram da tela para não pesar a memória
-            obstaculos = obstaculos.filter(obs => obs.x + obs.largura > 0);
-
-            // Pontuação e Frames
-            frame++;
-            pontuacao++;
-            ctx.fillStyle = "#333";
-            ctx.font = "16px Arial";
-            ctx.fillText("Pontos: " + Math.floor(pontuacao / 10), 10, 25);
         }
 
         // Inicia o jogo
+        enviarMeusDados();
         loopMotor();
     </script>
 </body>
